@@ -962,7 +962,7 @@ select.form-input { appearance: auto; }
 <div class="topbar">
   <div>
     <div class="topbar-title" id="topbar-title">Клиенты</div>
-    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.9</div>
+    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.11</div>
   </div>
   <div class="topbar-right">
     <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Тема"></button>
@@ -1324,7 +1324,7 @@ function renderClients() {
     const visits = statusFilter
       ? allVisits.filter(v => v.status === statusFilter)
       : allVisits;
-    const exp = statusFilter ? true : expanded.has(c.id); // auto-expand when filtered
+    const exp = expanded.has(c.id);
     const statusMap = { inprogress: 'В работе', unpaid: 'Не оплачено', done: 'Оплачено' };
     const contacts = c.contacts || [];
     const firstPhone = contacts.length ? contacts[0].phone : '';
@@ -1368,6 +1368,14 @@ function renderClients() {
           <div class="visit-right">
             <div class="visit-sum">${fmoney(v.total)}</div>
           </div>
+        </div>`;
+      }
+      // итого по организации — только при активном фильтре и больше одного выезда
+      if (statusFilter && visits.length > 1) {
+        const orgTotal = visits.reduce((s, v) => s + (Number(v.total)||0), 0);
+        h += `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-top:1px solid var(--border);background:var(--bg3);">
+          <span style="font-size:11px;font-family:var(--mono);font-weight:700;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;">Итого по организации</span>
+          <span style="font-size:15px;font-family:var(--mono);font-weight:800;color:var(--accent);">${fmoney(orgTotal)}</span>
         </div>`;
       }
     }
@@ -1421,7 +1429,16 @@ function renderPrice() {
 
 function onSearch(v) { search = v; render(); }
 function onPriceSearch(v) { priceSearch = v; render(); }
-function setFilter(f) { statusFilter = f; render(); }
+function setFilter(f) {
+  statusFilter = f;
+  if (f) {
+    // авто-раскрыть всех клиентов с подходящими выездами
+    db.clients.forEach(c => {
+      if (db.visits.some(v => v.cid === c.id && v.status === f)) expanded.add(c.id);
+    });
+  }
+  render();
+}
 function toggleClient(id) {
   expanded.has(id) ? expanded.delete(id) : expanded.add(id);
   render();
@@ -1599,7 +1616,7 @@ function togglePricePicker() {
   if (!db.pricelist.length) {
     dp.innerHTML = '<div class="picker-empty">Прайс пуст</div>';
   } else {
-    dp.innerHTML = db.pricelist.map(p => `
+    dp.innerHTML = [...db.pricelist].sort((a,b) => safeStr(a.name).localeCompare(safeStr(b.name),'ru')).map(p => `
       <div class="picker-item" onclick="insertFromPrice('${p.id}')">
         <span class="picker-item-name">${esc(p.name)}</span>
         <span class="picker-item-price">${fmoney(p.price)}</span>
@@ -1696,7 +1713,7 @@ function renderWorks() {
       <button class="work-remove" onclick="removeWork(${i})">×</button>
       <select class="work-select" onchange="onWorkPick(${i},this.value)">
         <option value="">— выберите работу —</option>
-        ${db.pricelist.map(p => `<option value="${p.id}" ${w.pid===p.id?'selected':''}>${esc(p.name)} — ${fmoney(p.price)}</option>`).join('')}
+        ${[...db.pricelist].sort((a,b) => safeStr(a.name).localeCompare(safeStr(b.name),'ru')).map(p => `<option value="${p.id}" ${w.pid===p.id?'selected':''}>${esc(p.name)} — ${fmoney(p.price)}</option>`).join('')}
       </select>
       <div class="work-grid">
         <div>
@@ -1997,7 +2014,9 @@ init();
 
     <div class="help-section">
       <div class="help-section-title">История версий</div>
-      <p class="help-p"><strong>v1.9</strong> — закрыты оставшиеся замечания аудита: сортировка клиентов и прайса защищена через safeStr; validateDb углублена до проверки типов вложенных полей (mult, price, status, total, works, contacts); confirm-ok переведён на async/await — диалог закрывается только после завершения сохранения.</p>
+      <p class="help-p"><strong>v1.11</strong> — при активном фильтре карточки сворачиваются и разворачиваются стрелкой как обычно; под выездами организации выводится итоговая сумма (при наличии двух и более записей).</p>
+      <p class="help-p"><strong>v1.10</strong> — выпадающий список работ в выезде и список «Из прайса» сортируются по алфавиту.</p>
+      <p class="help-p"><strong>v1.9</strong> — закрыты оставшиеся замечания аудита: сортировка клиентов и прайса защищена через safeStr; validateDb углублена до проверки типов вложенных полей; confirm-ok переведён на async/await.</p>
       <p class="help-p"><strong>v1.8</strong> — аудит и исправления: удалён мёртвый элемент статуса в форме выезда; все сохранения переведены на await; ужесточена валидация импорта; рендер защищён от битых данных; унифицированы названия статусов; исправлена иконка пустого фильтра «В работе»; убран лишний вызов requestPermissions; исправлено описание цвета статуса в справке.</p>
       <p class="help-p"><strong>v1.7</strong> — исправлена ошибка экспорта и записи базы в APK: Directory и Encoding теперь передаются строками ('DATA', 'CACHE', 'utf8') вместо enum-значений которые недоступны через window.Capacitor.Plugins.</p>
       <p class="help-p"><strong>v1.6</strong> — хранилище данных в APK переключено на внутреннюю папку приложения (Directory.Data) — запись работает без разрешений на всех версиях Android.</p>
@@ -2011,7 +2030,7 @@ init();
 
   </div>
   <div style="text-align:center;padding:16px;font-size:11px;font-family:var(--mono);color:var(--text3);border-top:1px solid var(--border);margin-top:4px;">
-    © CheshirCa Nest · Дядька Чешир · v1.9
+    © CheshirCa Nest · Дядька Чешир · v1.11
   </div>
 </div>
 
