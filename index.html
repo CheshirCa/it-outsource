@@ -1,0 +1,2038 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>IT Аутсорс</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg: #0f1117;
+  --bg2: #171b24;
+  --bg3: #1e2333;
+  --border: #2a3045;
+  --text: #e8eaf0;
+  --text2: #8892aa;
+  --text3: #555f7a;
+  --accent: #4e7bef;
+  --accent2: #3563d4;
+  --green: #22c55e;
+  --green-bg: rgba(34,197,94,0.10);
+  --green-border: rgba(34,197,94,0.25);
+  --amber: #f59e0b;
+  --amber-bg: rgba(245,158,11,0.10);
+  --amber-border: rgba(245,158,11,0.28);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,0.10);
+  --red-border: rgba(239,68,68,0.25);
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Manrope', -apple-system, sans-serif;
+}
+
+body.light {
+  --bg: #f0f2f7;
+  --bg2: #ffffff;
+  --bg3: #e8eaf2;
+  --border: #d0d5e8;
+  --text: #1a1e2e;
+  --text2: #4a5270;
+  --text3: #8890aa;
+  --accent: #3563d4;
+  --accent2: #2450b8;
+  --green: #16a34a;
+  --green-bg: rgba(22,163,74,0.10);
+  --green-border: rgba(22,163,74,0.28);
+  --amber: #d97706;
+  --amber-bg: rgba(217,119,6,0.10);
+  --amber-border: rgba(217,119,6,0.28);
+  --red: #dc2626;
+  --red-bg: rgba(220,38,38,0.08);
+  --red-border: rgba(220,38,38,0.25);
+}
+
+.theme-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.15s;
+  line-height: 1;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  overscroll-behavior: none;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.topbar-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text);
+}
+.topbar-sub {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--accent);
+  margin-top: 1px;
+}
+.topbar-right { display: flex; gap: 8px; }
+.topbar-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+/* ── MAIN ── */
+.main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px;
+  padding-bottom: 72px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-btn {
+  flex: 1;
+  padding: 10px 8px;
+  border: none;
+  background: none;
+  color: var(--text3);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: color 0.15s;
+}
+.nav-btn.active { color: var(--accent); }
+.nav-icon { font-size: 20px; line-height: 1; }
+.nav-btn.active .nav-icon { filter: drop-shadow(0 0 6px var(--accent)); }
+
+/* ── FAB ── */
+.fab {
+  position: fixed;
+  bottom: 68px; right: 14px;
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(78,123,239,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.fab:active { transform: scale(0.93); box-shadow: 0 2px 10px rgba(78,123,239,0.3); }
+
+/* ── SEARCH ── */
+.search-bar {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+.search-bar input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  font-family: var(--sans);
+  background: none;
+  color: var(--text);
+}
+.search-bar input::placeholder { color: var(--text3); }
+.search-icon { color: var(--text3); font-size: 15px; }
+
+/* ── CLIENT CARD ── */
+.client-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.client-card.expanded { border-color: var(--accent); }
+
+.client-header {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.client-avatar {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent);
+  flex-shrink: 0;
+  font-family: var(--mono);
+}
+.client-info { flex: 1; min-width: 0; }
+.client-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.client-meta {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 2px;
+  font-family: var(--mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mult-badge {
+  display: inline-block;
+  background: rgba(78,123,239,0.15);
+  border: 1px solid rgba(78,123,239,0.3);
+  color: var(--accent);
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-family: var(--mono);
+  font-weight: 600;
+  margin-left: 6px;
+}
+.chevron {
+  color: var(--text3);
+  font-size: 18px;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.client-card.expanded .chevron { transform: rotate(90deg); color: var(--accent); }
+
+.client-body { display: none; border-top: 1px solid var(--border); }
+.client-card.expanded .client-body { display: block; }
+
+/* ── VISIT ITEM ── */
+.visit-item {
+  padding: 11px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+  position: relative;
+}
+.visit-item:last-of-type { border-bottom: none; }
+.visit-item:active { background: var(--bg3); }
+
+.visit-bar {
+  width: 3px;
+  align-self: stretch;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.visit-item.inprogress .visit-bar { background: var(--amber); }
+.visit-item.unpaid .visit-bar { background: var(--red); }
+.visit-item.done .visit-bar { background: var(--border); }
+
+.visit-left { flex: 1; min-width: 0; }
+.visit-date {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text3);
+}
+.visit-reason {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.visit-status-label {
+  font-size: 11px;
+  margin-top: 3px;
+  font-weight: 600;
+  font-family: var(--mono);
+}
+.inprogress .visit-status-label { color: var(--amber); }
+.unpaid .visit-status-label { color: var(--red); }
+.done .visit-status-label { color: var(--text3); }
+
+.visit-right { text-align: right; flex-shrink: 0; }
+.visit-sum {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--text);
+}
+
+/* visit backgrounds */
+.visit-item.inprogress { background: var(--amber-bg); }
+.visit-item.unpaid { background: var(--red-bg); }
+
+.add-visit-btn {
+  width: 100%;
+  padding: 11px;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-family: var(--sans);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+.add-visit-btn:active { background: rgba(78,123,239,0.08); }
+
+.client-actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+}
+.act-btn {
+  flex: 1;
+  padding: 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text2);
+  font-size: 12px;
+  font-family: var(--sans);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.act-btn.danger { color: var(--red); border-color: var(--red-border); }
+
+/* ── PRICE LIST ── */
+.price-item {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.price-name { font-size: 15px; font-weight: 600; color: var(--text); }
+.price-cat { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
+.price-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.price-val {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--accent);
+}
+.icon-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 6px 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text3);
+}
+.empty-icon { font-size: 52px; margin-bottom: 14px; opacity: 0.5; }
+.empty-text { font-size: 15px; line-height: 1.5; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 200;
+  align-items: flex-end;
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  background: var(--bg2);
+  border-radius: 18px 18px 0 0;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 20px 16px 32px;
+  width: 100%;
+  max-height: 88dvh;
+  overflow-y: auto;
+}
+.modal-handle {
+  width: 36px; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.modal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.modal-title { font-size: 17px; font-weight: 800; }
+.modal-close {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── FORM ── */
+.form-group { margin-bottom: 14px; }
+.form-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text2);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
+  font-family: var(--mono);
+}
+.form-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: var(--sans);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: var(--text3); }
+textarea.form-input { min-height: 80px; resize: vertical; line-height: 1.5; }
+select.form-input { appearance: auto; }
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-family: var(--sans);
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: background 0.15s;
+}
+.btn-primary:active { background: var(--accent2); }
+
+/* ── FULLSCREEN VISIT EDITOR ── */
+.fullscreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 300;
+  flex-direction: column;
+  overflow: hidden;
+}
+.fullscreen.open { display: flex; }
+.fs-header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.back-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 9px;
+  padding: 7px 12px;
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+}
+.fs-title { flex: 1; font-size: 16px; font-weight: 800; }
+.fs-save-btn {
+  background: var(--accent);
+  border: none;
+  color: white;
+  border-radius: 9px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-family: var(--sans);
+  font-weight: 700;
+  cursor: pointer;
+}
+.fs-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  padding-bottom: 20px;
+}
+
+/* ── STATUS SELECTOR ── */
+.status-selector { display: flex; gap: 6px; }
+.status-opt {
+  flex: 1;
+  padding: 10px 4px;
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--mono);
+  cursor: pointer;
+  color: var(--text2);
+  transition: all 0.15s;
+}
+.status-opt.sel-inprogress { border-color: var(--amber); background: var(--amber-bg); color: var(--amber); }
+.status-opt.sel-unpaid { border-color: var(--red); background: var(--red-bg); color: var(--red); }
+.status-opt.sel-done { border-color: var(--accent); background: rgba(78,123,239,0.12); color: var(--accent); }
+
+/* ── WORK ITEMS ── */
+.work-items { margin-bottom: 10px; }
+.work-item-row {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+  position: relative;
+}
+.work-remove {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text3);
+  font-size: 14px;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.work-select {
+  width: calc(100% - 34px);
+  padding: 9px 12px;
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: var(--sans);
+  color: var(--text);
+  outline: none;
+  margin-bottom: 8px;
+}
+.work-select:focus { border-color: var(--accent); }
+.work-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
+.work-field-label {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--text3);
+  margin-bottom: 3px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.work-field-input {
+  width: 100%;
+  padding: 8px 9px;
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  font-size: 13px;
+  font-family: var(--mono);
+  color: var(--text);
+  outline: none;
+}
+.work-field-input:focus { border-color: var(--accent); }
+.work-total-field {
+  width: 100%;
+  padding: 8px 9px;
+  background: rgba(78,123,239,0.08);
+  border: 1.5px solid rgba(78,123,239,0.25);
+  border-radius: 7px;
+  font-size: 13px;
+  font-family: var(--mono);
+  color: var(--accent);
+  font-weight: 700;
+  outline: none;
+  cursor: text;
+}
+.work-total-field:focus {
+  border-color: var(--accent);
+  background: rgba(78,123,239,0.14);
+}
+.work-total-field.manual {
+  background: rgba(251,191,36,0.08);
+  border-color: rgba(251,191,36,0.35);
+  color: #fbbf24;
+}
+.work-total-field.manual:focus {
+  border-color: #fbbf24;
+}
+.work-field-input.mult-manual {
+  background: rgba(251,191,36,0.08);
+  border-color: rgba(251,191,36,0.4);
+  color: #fbbf24;
+  font-weight: 700;
+}
+.mult-hint {
+  font-size: 9px;
+  font-family: var(--mono);
+  color: #fbbf24;
+  margin-top: 2px;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+/* ── HELP SCREEN ── */
+.help-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  padding-bottom: 32px;
+}
+.help-section {
+  margin-bottom: 22px;
+}
+.help-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  font-family: var(--mono);
+  color: var(--accent);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 12px;
+}
+.help-p {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.65;
+  margin-bottom: 9px;
+}
+.help-p:last-child { margin-bottom: 0; }
+.help-p strong { color: var(--text); font-weight: 700; }
+.help-badge {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-family: var(--mono);
+  font-weight: 700;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+.hb-green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.hb-red   { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-border); }
+.hb-blue  { background: rgba(78,123,239,0.12); color: var(--accent); border: 1px solid rgba(78,123,239,0.3); }
+.hb-amber { background: rgba(251,191,36,0.10); color: #fbbf24; border: 1px solid rgba(251,191,36,0.35); }
+.help-tip {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.55;
+  margin-top: 10px;
+}
+
+.add-work-btn {
+  width: 100%;
+  padding: 11px;
+  background: transparent;
+  border: 1.5px dashed var(--border);
+  border-radius: 10px;
+  color: var(--text2);
+  font-size: 14px;
+  font-family: var(--sans);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.add-work-btn:active { border-color: var(--accent); color: var(--accent); }
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+}
+.total-label { font-size: 13px; color: var(--text2); font-family: var(--mono); }
+.total-value { font-size: 22px; font-weight: 800; font-family: var(--mono); color: var(--accent); }
+
+.section-sep {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text3);
+  font-family: var(--mono);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: 14px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.filter-btn {
+  flex: 1;
+  padding: 8px 6px;
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  color: var(--text3);
+  font-size: 12px;
+  font-family: var(--mono);
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.filter-btn.active-all   { border-color: var(--accent); color: var(--accent); background: rgba(78,123,239,0.1); }
+.filter-btn.active-inprogress { border-color: var(--amber); color: var(--amber); background: var(--amber-bg); }
+.filter-btn.active-unpaid     { border-color: var(--red);   color: var(--red);   background: var(--red-bg); }
+.filter-btn.active-done       { border-color: var(--text2); color: var(--text2); background: rgba(136,146,170,0.12); }
+
+/* ── REASON FIELD WITH PRICE PICKER ── */
+.reason-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.from-price-btn {
+  background: rgba(78,123,239,0.12);
+  border: 1px solid rgba(78,123,239,0.3);
+  color: var(--accent);
+  border-radius: 7px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-family: var(--mono);
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: background 0.15s;
+}
+.from-price-btn:active { background: rgba(78,123,239,0.25); }
+.reason-wrapper { position: relative; }
+.price-picker-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: var(--bg2);
+  border: 1.5px solid var(--accent);
+  border-radius: 10px;
+  z-index: 50;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.price-picker-dropdown.open { display: block; }
+.picker-item {
+  padding: 11px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.picker-item:last-child { border-bottom: none; }
+.picker-item:active { background: var(--bg3); }
+.picker-item-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.picker-item-price { font-size: 12px; font-family: var(--mono); color: var(--text3); flex-shrink: 0; }
+.picker-empty { padding: 14px; text-align: center; color: var(--text3); font-size: 13px; }
+
+/* ── CONFIRM DIALOG ── */
+.confirm-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 400;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.confirm-overlay.open { display: flex; }
+.confirm-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  width: 100%;
+  max-width: 320px;
+}
+.confirm-title { font-size: 16px; font-weight: 800; margin-bottom: 7px; }
+.confirm-text { font-size: 14px; color: var(--text2); line-height: 1.5; margin-bottom: 18px; }
+.confirm-btns { display: flex; gap: 8px; }
+.confirm-btns button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: var(--sans);
+  font-weight: 700;
+  cursor: pointer;
+}
+.confirm-cancel { background: var(--bg3); color: var(--text2); }
+.confirm-ok { background: var(--red); color: white; }
+
+/* ── CONTACTS ── */
+.contacts-list { margin-bottom: 8px; }
+.contact-row {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 10px 10px 12px;
+  margin-bottom: 7px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.contact-fields { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.contact-input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: var(--sans);
+  color: var(--text);
+  outline: none;
+}
+.contact-input:focus { border-color: var(--accent); }
+.contact-input::placeholder { color: var(--text3); }
+.contact-remove {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text3);
+  font-size: 16px;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.add-contact-btn {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1.5px dashed var(--border);
+  border-radius: 10px;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: var(--sans);
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 14px;
+}
+
+/* contacts display in card */
+.contacts-block {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.contact-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.contact-chip-role {
+  font-size: 10px;
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+.contact-chip-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.contact-chip-phone {
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--accent);
+  margin-left: auto;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title" id="topbar-title">Клиенты</div>
+    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.9</div>
+  </div>
+  <div class="topbar-right">
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Тема"></button>
+    <button class="topbar-btn" onclick="importData()" title="Импорт">⬆</button>
+    <button class="topbar-btn" onclick="exportData()" title="Экспорт">⬇</button>
+    <button class="topbar-btn" onclick="openHelp()" title="Справка" style="color:var(--accent);font-weight:700;">?</button>
+  </div>
+</div>
+
+<!-- ── STATIC SEARCH + FILTER (clients only) ── -->
+<div id="clients-toolbar" style="display:none; padding: 12px 12px 0; flex-shrink:0; background:var(--bg);">
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="search" id="search-input" placeholder="Поиск по имени, контактам..."
+      oninput="onSearch(this.value)" autocomplete="off">
+  </div>
+  <div class="filter-bar">
+    <button class="filter-btn" id="fb-all"       onclick="setFilter(null)">Все</button>
+    <button class="filter-btn" id="fb-inprogress" onclick="setFilter('inprogress')">🟡 В работе</button>
+    <button class="filter-btn" id="fb-unpaid"     onclick="setFilter('unpaid')">🔴 Неопл.</button>
+    <button class="filter-btn" id="fb-done"       onclick="setFilter('done')">✅ Сделано</button>
+  </div>
+</div>
+
+<!-- ── STATIC SEARCH (price only) ── -->
+<div id="price-toolbar" style="display:none; padding: 12px 12px 0; flex-shrink:0; background:var(--bg);">
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="search" id="price-search-input" placeholder="Поиск по прайсу..."
+      oninput="onPriceSearch(this.value)" autocomplete="off">
+  </div>
+</div>
+
+<div class="main" id="main"></div>
+
+<div class="bottom-nav">
+  <button class="nav-btn active" id="nav-clients" onclick="switchTab('clients')">
+    <span class="nav-icon">👥</span>Клиенты
+  </button>
+  <button class="nav-btn" id="nav-price" onclick="switchTab('price')">
+    <span class="nav-icon">📋</span>Прайс
+  </button>
+</div>
+
+<button class="fab" id="fab" onclick="handleFab()">+</button>
+
+<!-- ── CLIENT MODAL ── -->
+<div class="modal-overlay" id="client-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-top">
+      <div class="modal-title" id="client-modal-title">Новый клиент</div>
+      <button class="modal-close" onclick="closeModal('client-modal')">×</button>
+    </div>
+    <input type="hidden" id="c-id">
+    <div class="form-group">
+      <label class="form-label">Имя / Организация</label>
+      <input class="form-input" id="c-name" placeholder="ООО Рога и Копыта">
+    </div>
+    <div class="row2">
+      <div class="form-group">
+        <label class="form-label">Адрес</label>
+        <input class="form-input" id="c-addr" placeholder="ул. Ленина, 1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Множитель</label>
+        <input class="form-input" id="c-mult" type="number" step="0.01" min="0.01" value="1.0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Контактные лица</label>
+      <div class="contacts-list" id="c-contacts-list"></div>
+      <button class="add-contact-btn" onclick="addContact()">+ Добавить контакт</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Заметки</label>
+      <textarea class="form-input" id="c-notes" placeholder="Любые заметки..."></textarea>
+    </div>
+    <button class="btn-primary" onclick="saveClient()">Сохранить</button>
+  </div>
+</div>
+
+<!-- ── PRICE MODAL ── -->
+<div class="modal-overlay" id="price-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-top">
+      <div class="modal-title" id="price-modal-title">Новая работа</div>
+      <button class="modal-close" onclick="closeModal('price-modal')">×</button>
+    </div>
+    <input type="hidden" id="p-id">
+    <div class="form-group">
+      <label class="form-label">Название работы</label>
+      <input class="form-input" id="p-name" placeholder="Настройка роутера">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Цена за единицу (₽)</label>
+      <input class="form-input" id="p-price" type="number" min="0" step="0.01" placeholder="1500">
+    </div>
+    <button class="btn-primary" onclick="savePrice()">Сохранить</button>
+  </div>
+</div>
+
+<!-- ── VISIT FULLSCREEN ── -->
+<div class="fullscreen" id="visit-screen">
+  <div class="fs-header">
+    <button class="back-btn" onclick="closeVisit()">‹</button>
+    <div class="fs-title" id="fs-title">Выезд</div>
+    <button class="fs-save-btn" onclick="saveVisit()">Сохранить</button>
+  </div>
+  <div class="fs-body">
+    <input type="hidden" id="v-id">
+    <input type="hidden" id="v-cid">
+
+    <div class="form-group">
+      <label class="form-label">Дата</label>
+      <input class="form-input" id="v-date" type="date">
+    </div>
+
+    <div class="form-group">
+      <div class="reason-label-row">
+        <label class="form-label" style="margin-bottom:0;">Причина вызова</label>
+        <button class="from-price-btn" onclick="togglePricePicker()">📋 Из прайса</button>
+      </div>
+      <div class="reason-wrapper">
+        <textarea class="form-input" id="v-reason" rows="2"
+          placeholder="Упал WiFi, не работает 1С..."
+          style="min-height:60px;resize:none;"
+          onfocus="closePricePicker()"></textarea>
+        <div class="price-picker-dropdown" id="price-picker"></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Статус</label>
+      <div class="status-selector">
+        <div class="status-opt sel-inprogress" data-s="inprogress" onclick="setStatus('inprogress')">В работе</div>
+        <div class="status-opt" data-s="unpaid" onclick="setStatus('unpaid')">Не оплачено</div>
+        <div class="status-opt" data-s="done" onclick="setStatus('done')">Оплачено</div>
+      </div>
+    </div>
+
+    <div class="section-sep">Работы</div>
+    <div class="work-items" id="work-list"></div>
+    <button class="add-work-btn" onclick="addWork()">+ Добавить работу</button>
+
+    <div class="total-row">
+      <span class="total-label">ИТОГО</span>
+      <span class="total-value" id="v-total">0 ₽</span>
+    </div>
+
+    <div class="section-sep">Заметки</div>
+    <div class="form-group">
+      <textarea class="form-input" id="v-note" placeholder="Произвольные заметки по выезду..."></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIRM ── -->
+<div class="confirm-overlay" id="confirm">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title">Удалить?</div>
+    <div class="confirm-text" id="confirm-text">Это действие нельзя отменить.</div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">Отмена</button>
+      <button class="confirm-ok" id="confirm-ok">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<!-- hidden file input for import -->
+<input type="file" id="import-input" accept=".json" style="display:none" onchange="doImport(this)">
+
+<script>
+// ══════════════════════════════════════════
+// CAPACITOR DETECTION
+// ══════════════════════════════════════════
+// window.Capacitor доступен только внутри APK.
+// В браузере все вызовы плагинов тихо пропускаются —
+// приложение продолжает работать через localStorage как раньше.
+const IS_CAP = !!(window.Capacitor && window.Capacitor.isNativePlatform());
+
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+let db = { clients: [], pricelist: [], visits: [] };
+const FILE_NAME = 'ito_data.json';
+
+// Загрузка: сначала пробуем файл (только в APK), fallback — localStorage
+async function load() {
+  if (IS_CAP) {
+    try {
+      const { Filesystem } = window.Capacitor.Plugins;
+      const result = await Filesystem.readFile({
+        path: FILE_NAME,
+        directory: 'DATA',
+        encoding: 'utf8'
+      });
+      db = JSON.parse(result.data);
+      return;
+    } catch(e) {
+      // файл ещё не создан — нормально при первом запуске
+    }
+  }
+  // fallback: localStorage (браузер или первый запуск APK)
+  try {
+    const s = localStorage.getItem('ito_v2');
+    if (s) db = JSON.parse(s);
+  } catch(e) {}
+}
+
+// Сохранение: пишем и в файл (APK) и в localStorage (страховка)
+async function save() {
+  const json = JSON.stringify(db);
+  localStorage.setItem('ito_v2', json);
+  if (IS_CAP) {
+    try {
+      const { Filesystem } = window.Capacitor.Plugins;
+      await Filesystem.writeFile({
+        path: FILE_NAME,
+        data: json,
+        directory: 'DATA',
+        encoding: 'utf8',
+        recursive: true
+      });
+    } catch(e) {
+      console.warn('Filesystem write error:', e);
+    }
+  }
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let tab = 'clients';
+let search = '';
+let priceSearch = '';
+let statusFilter = null; // null | 'inprogress' | 'unpaid'
+let expanded = new Set();
+let curCid = null;   // client id for current visit
+let curStatus = 'inprogress';
+let works = [];      // current visit work items
+let curContacts = []; // contacts being edited
+let confirmCb = null;
+
+// ══════════════════════════════════════════
+// TAB
+// ══════════════════════════════════════════
+function switchTab(t) {
+  tab = t;
+  document.getElementById('nav-clients').classList.toggle('active', t === 'clients');
+  document.getElementById('nav-price').classList.toggle('active', t === 'price');
+  document.getElementById('topbar-title').textContent = t === 'clients' ? 'Клиенты' : 'Прайс';
+  document.getElementById('clients-toolbar').style.display = t === 'clients' ? 'block' : 'none';
+  document.getElementById('price-toolbar').style.display   = t === 'price'   ? 'block' : 'none';
+  render();
+}
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function render() {
+  if (tab === 'clients') {
+    updateToolbar();
+    document.getElementById('main').innerHTML = renderClients();
+  } else {
+    document.getElementById('main').innerHTML = renderPrice();
+  }
+}
+
+function updateToolbar() {
+  const cntInprogress = db.visits.filter(v => v.status === 'inprogress').length;
+  const cntUnpaid     = db.visits.filter(v => v.status === 'unpaid').length;
+  const cntDone       = db.visits.filter(v => v.status === 'done').length;
+  const el = f => document.getElementById(f);
+  el('fb-all').className        = 'filter-btn' + (!statusFilter ? ' active-all' : '');
+  el('fb-inprogress').className = 'filter-btn' + (statusFilter === 'inprogress' ? ' active-inprogress' : '');
+  el('fb-unpaid').className     = 'filter-btn' + (statusFilter === 'unpaid'     ? ' active-unpaid'     : '');
+  el('fb-done').className       = 'filter-btn' + (statusFilter === 'done'       ? ' active-done'       : '');
+  el('fb-inprogress').textContent = '🟡 В работе' + (cntInprogress ? ' ('+cntInprogress+')' : '');
+  el('fb-unpaid').textContent     = '🔴 Неопл.'   + (cntUnpaid     ? ' ('+cntUnpaid+')'     : '');
+  el('fb-done').textContent       = '✅ Сделано'  + (cntDone       ? ' ('+cntDone+')'       : '');
+  // keep search input value without resetting cursor
+  const inp = document.getElementById('search-input');
+  if (inp && inp !== document.activeElement) inp.value = search;
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fdate(d) {
+  if (!d) return '';
+  const [y,m,day] = d.split('-');
+  return `${day}.${m}.${y}`;
+}
+function fmoney(n) {
+  return Number(n||0).toLocaleString('ru-RU') + ' ₽';
+}
+function initial(name) {
+  return (String(name||'?')).trim()[0].toUpperCase();
+}
+function safeStr(v) { return typeof v === 'string' ? v : String(v||''); }
+
+function renderClients() {
+  // text search
+  let list = db.clients.filter(c => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    if (safeStr(c.name).toLowerCase().includes(s)) return true;
+    if (safeStr(c.addr).toLowerCase().includes(s)) return true;
+    if ((c.contacts||[]).some(ct =>
+      safeStr(ct.name).toLowerCase().includes(s) ||
+      safeStr(ct.phone).includes(s) ||
+      safeStr(ct.role).toLowerCase().includes(s)
+    )) return true;
+    return false;
+  });
+
+  // status filter: keep only clients that have at least one matching visit
+  if (statusFilter) {
+    list = list.filter(c =>
+      db.visits.some(v => v.cid === c.id && v.status === statusFilter)
+    );
+  }
+
+  // сортировка: по алфавиту в обычном режиме, по дате последнего визита при фильтре
+  if (statusFilter) {
+    list.sort((a, b) => {
+      const lastA = db.visits.filter(v => v.cid === a.id && v.status === statusFilter)
+                             .map(v => v.date).sort().pop() || '';
+      const lastB = db.visits.filter(v => v.cid === b.id && v.status === statusFilter)
+                             .map(v => v.date).sort().pop() || '';
+      return lastB.localeCompare(lastA);
+    });
+  } else {
+    list.sort((a, b) => safeStr(a.name).localeCompare(safeStr(b.name), 'ru'));
+  }
+
+  if (!list.length) {
+    const emptyText = statusFilter === 'inprogress' ? 'Нет активных работ' :
+                      statusFilter === 'unpaid'     ? 'Нет неоплаченных' :
+                      statusFilter === 'done'       ? 'Нет завершённых работ' :
+                      search ? 'Ничего не найдено' : 'Клиентов нет.<br>Нажмите + чтобы добавить.';
+    return `<div class="empty-state">
+      <div class="empty-icon">${statusFilter === 'inprogress' ? '⏳' : statusFilter === 'unpaid' ? '💰' : statusFilter === 'done' ? '📁' : '👥'}</div>
+      <div class="empty-text">${emptyText}</div>
+    </div>`;
+  }
+
+  let h = '';
+  for (const c of list) {
+    // when filtering by status — show only matching visits; otherwise all
+    const allVisits = db.visits.filter(v => v.cid === c.id).sort((a,b) => b.date.localeCompare(a.date));
+    const visits = statusFilter
+      ? allVisits.filter(v => v.status === statusFilter)
+      : allVisits;
+    const exp = statusFilter ? true : expanded.has(c.id); // auto-expand when filtered
+    const statusMap = { inprogress: 'В работе', unpaid: 'Не оплачено', done: 'Оплачено' };
+    const contacts = c.contacts || [];
+    const firstPhone = contacts.length ? contacts[0].phone : '';
+    const subtitle = firstPhone || c.addr || '—';
+
+    h += `<div class="client-card ${exp?'expanded':''}">
+      <div class="client-header" onclick="toggleClient('${c.id}')">
+        <div class="client-avatar">${esc(initial(c.name))}</div>
+        <div class="client-info">
+          <div class="client-name">${esc(c.name)}<span class="mult-badge">×${c.mult}</span></div>
+          <div class="client-meta">${esc(subtitle)}${c.addr && firstPhone ? ' · '+esc(c.addr) : ''}</div>
+        </div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="client-body">`;
+
+    if (contacts.length) {
+      h += `<div class="contacts-block">`;
+      for (const ct of contacts) {
+        h += `<div class="contact-chip">
+          <span class="contact-chip-role">${esc(ct.role||'—')}</span>
+          <span class="contact-chip-name">${esc(ct.name||'—')}</span>
+          <span class="contact-chip-phone">${esc(ct.phone||'')}</span>
+        </div>`;
+      }
+      h += `</div>`;
+    }
+
+    if (!visits.length) {
+      h += `<div style="padding:12px 16px;color:var(--text3);font-size:13px;font-family:var(--mono);">Выездов нет</div>`;
+    } else {
+      for (const v of visits) {
+        const stl = v.status;
+        h += `<div class="visit-item ${stl}" onclick="openVisitEdit('${v.id}','${c.id}')">
+          <div class="visit-bar"></div>
+          <div class="visit-left">
+            <div class="visit-date">${fdate(v.date)}</div>
+            <div class="visit-reason">${esc(v.reason)}</div>
+            <div class="visit-status-label">${statusMap[stl]||stl}</div>
+          </div>
+          <div class="visit-right">
+            <div class="visit-sum">${fmoney(v.total)}</div>
+          </div>
+        </div>`;
+      }
+    }
+
+    h += `<button class="add-visit-btn" onclick="openVisitNew('${c.id}')">+ Добавить выезд</button>
+      <div class="client-actions">
+        <button class="act-btn" onclick="openClientEdit('${c.id}')">✏️ Изменить</button>
+        <button class="act-btn danger" onclick="delClient('${c.id}')">🗑 Удалить</button>
+      </div>
+    </div></div>`;
+  }
+  return h;
+}
+
+function renderPrice() {
+  // keep search input in sync without touching focused element
+  const pinp = document.getElementById('price-search-input');
+  if (pinp && pinp !== document.activeElement) pinp.value = priceSearch;
+
+  let list = db.pricelist;
+  if (priceSearch) {
+    const s = priceSearch.toLowerCase();
+    list = list.filter(p => safeStr(p.name).toLowerCase().includes(s));
+  }
+  list = [...list].sort((a, b) => safeStr(a.name).localeCompare(safeStr(b.name), 'ru'));
+
+  if (!db.pricelist.length) {
+    return `<div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-text">Прайс пуст.<br>Нажмите + чтобы добавить работы.</div>
+    </div>`;
+  }
+  if (!list.length) {
+    return `<div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-text">Ничего не найдено</div>
+    </div>`;
+  }
+  return list.map(p => `
+    <div class="price-item">
+      <div>
+        <div class="price-name">${esc(p.name)}</div>
+      </div>
+      <div class="price-right">
+        <div class="price-val">${fmoney(p.price)}</div>
+        <button class="icon-btn" onclick="openPriceEdit('${p.id}')">✏️</button>
+        <button class="icon-btn" onclick="delPrice('${p.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function onSearch(v) { search = v; render(); }
+function onPriceSearch(v) { priceSearch = v; render(); }
+function setFilter(f) { statusFilter = f; render(); }
+function toggleClient(id) {
+  expanded.has(id) ? expanded.delete(id) : expanded.add(id);
+  render();
+}
+
+// ══════════════════════════════════════════
+// FAB
+// ══════════════════════════════════════════
+function handleFab() {
+  tab === 'clients' ? openClientNew() : openPriceNew();
+}
+
+// ══════════════════════════════════════════
+// CLIENT MODAL
+// ══════════════════════════════════════════
+function openClientNew() {
+  document.getElementById('client-modal-title').textContent = 'Новый клиент';
+  document.getElementById('c-id').value = '';
+  document.getElementById('c-name').value = '';
+  document.getElementById('c-addr').value = '';
+  document.getElementById('c-mult').value = '1.0';
+  document.getElementById('c-notes').value = '';
+  curContacts = [];
+  renderContacts();
+  openModal('client-modal');
+}
+function openClientEdit(id) {
+  const c = db.clients.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('client-modal-title').textContent = 'Изменить клиента';
+  document.getElementById('c-id').value = id;
+  document.getElementById('c-name').value = c.name;
+  document.getElementById('c-addr').value = c.addr||'';
+  document.getElementById('c-mult').value = c.mult;
+  document.getElementById('c-notes').value = c.notes||'';
+  curContacts = JSON.parse(JSON.stringify(c.contacts||[]));
+  renderContacts();
+  openModal('client-modal');
+}
+function addContact() {
+  curContacts.push({ name: '', role: '', phone: '' });
+  renderContacts();
+}
+function removeContact(i) {
+  curContacts.splice(i, 1);
+  renderContacts();
+}
+function onContactField(i, field, val) {
+  curContacts[i][field] = val;
+}
+function renderContacts() {
+  const el = document.getElementById('c-contacts-list');
+  if (!curContacts.length) { el.innerHTML = ''; return; }
+  el.innerHTML = curContacts.map((ct, i) => `
+    <div class="contact-row">
+      <div class="contact-fields">
+        <input class="contact-input" placeholder="Имя" value="${esc(ct.name)}"
+          oninput="onContactField(${i},'name',this.value)">
+        <input class="contact-input" placeholder="Должность (директор, бухгалтер...)" value="${esc(ct.role)}"
+          oninput="onContactField(${i},'role',this.value)">
+        <input class="contact-input" type="tel" placeholder="+7 900 ..." value="${esc(ct.phone)}"
+          oninput="onContactField(${i},'phone',this.value)">
+      </div>
+      <button class="contact-remove" onclick="removeContact(${i})">×</button>
+    </div>`).join('');
+}
+async function saveClient() {
+  const name = document.getElementById('c-name').value.trim();
+  if (!name) { alert('Введите название'); return; }
+  const mult = Math.max(0.01, parseFloat(document.getElementById('c-mult').value)||1);
+  const data = {
+    name, mult,
+    addr: document.getElementById('c-addr').value.trim(),
+    notes: document.getElementById('c-notes').value.trim(),
+    contacts: JSON.parse(JSON.stringify(curContacts))
+  };
+  const id = document.getElementById('c-id').value;
+  if (id) {
+    const i = db.clients.findIndex(x => x.id === id);
+    if (i>=0) db.clients[i] = { ...db.clients[i], ...data };
+  } else {
+    db.clients.push({ id: uid(), ...data });
+  }
+  await save(); closeModal('client-modal'); render();
+}
+function delClient(id) {
+  const c = db.clients.find(x => x.id === id);
+  showConfirm(`Удалить «${c?.name}»?`, 'Все выезды клиента тоже будут удалены.', async () => {
+    db.clients = db.clients.filter(x => x.id !== id);
+    db.visits = db.visits.filter(x => x.cid !== id);
+    expanded.delete(id);
+    await save(); render();
+  });
+}
+
+// ══════════════════════════════════════════
+// PRICE MODAL
+// ══════════════════════════════════════════
+function openPriceNew() {
+  document.getElementById('price-modal-title').textContent = 'Новая работа';
+  document.getElementById('p-id').value = '';
+  document.getElementById('p-name').value = '';
+  document.getElementById('p-price').value = '';
+  openModal('price-modal');
+}
+function openPriceEdit(id) {
+  const p = db.pricelist.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('price-modal-title').textContent = 'Изменить работу';
+  document.getElementById('p-id').value = id;
+  document.getElementById('p-name').value = p.name;
+  document.getElementById('p-price').value = p.price;
+  openModal('price-modal');
+}
+async function savePrice() {
+  const name = document.getElementById('p-name').value.trim();
+  if (!name) { alert('Введите название'); return; }
+  const price = parseFloat(document.getElementById('p-price').value)||0;
+  const id = document.getElementById('p-id').value;
+  if (id) {
+    const i = db.pricelist.findIndex(x => x.id === id);
+    if (i>=0) db.pricelist[i] = { ...db.pricelist[i], name, price };
+  } else {
+    db.pricelist.push({ id: uid(), name, price });
+  }
+  await save(); closeModal('price-modal'); render();
+}
+function delPrice(id) {
+  const p = db.pricelist.find(x => x.id === id);
+  showConfirm(`Удалить «${p?.name}» из прайса?`, '', async () => {
+    db.pricelist = db.pricelist.filter(x => x.id !== id);
+    await save(); render();
+  });
+}
+
+// ══════════════════════════════════════════
+// VISIT SCREEN
+// ══════════════════════════════════════════
+function openVisitNew(cid) {
+  const c = db.clients.find(x => x.id === cid);
+  curCid = cid;
+  works = [];
+  document.getElementById('v-id').value = '';
+  document.getElementById('v-cid').value = cid;
+  document.getElementById('v-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('v-reason').value = '';
+  document.getElementById('v-note').value = '';
+  document.getElementById('fs-title').textContent = c?.name || 'Выезд';
+  setStatus('inprogress');
+  renderWorks();
+  document.getElementById('visit-screen').classList.add('open');
+}
+function openVisitEdit(vid, cid) {
+  const v = db.visits.find(x => x.id === vid);
+  const c = db.clients.find(x => x.id === cid);
+  if (!v) return;
+  curCid = cid;
+  works = JSON.parse(JSON.stringify(v.works||[]));
+  document.getElementById('v-id').value = vid;
+  document.getElementById('v-cid').value = cid;
+  document.getElementById('v-date').value = v.date;
+  document.getElementById('v-reason').value = v.reason;
+  document.getElementById('v-note').value = v.note||'';
+  document.getElementById('fs-title').textContent = c?.name || 'Выезд';
+  setStatus(v.status);
+  renderWorks();
+  document.getElementById('visit-screen').classList.add('open');
+}
+function closeVisit() {
+  document.getElementById('visit-screen').classList.remove('open');
+}
+function togglePricePicker() {
+  const dp = document.getElementById('price-picker');
+  if (dp.classList.contains('open')) { closePricePicker(); return; }
+  if (!db.pricelist.length) {
+    dp.innerHTML = '<div class="picker-empty">Прайс пуст</div>';
+  } else {
+    dp.innerHTML = db.pricelist.map(p => `
+      <div class="picker-item" onclick="insertFromPrice('${p.id}')">
+        <span class="picker-item-name">${esc(p.name)}</span>
+        <span class="picker-item-price">${fmoney(p.price)}</span>
+      </div>`).join('');
+  }
+  dp.classList.add('open');
+  // close on outside tap
+  setTimeout(() => document.addEventListener('click', outsidePickerClose, { once: true }), 0);
+}
+function outsidePickerClose(e) {
+  const dp = document.getElementById('price-picker');
+  const btn = e.target.closest('.from-price-btn');
+  if (!btn) dp.classList.remove('open');
+}
+function closePricePicker() {
+  document.getElementById('price-picker').classList.remove('open');
+}
+function insertFromPrice(pid) {
+  const p = db.pricelist.find(x => x.id === pid);
+  if (!p) return;
+  const ta = document.getElementById('v-reason');
+  const cur = ta.value;
+  ta.value = cur ? cur + ', ' + p.name : p.name;
+  closePricePicker();
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+
+function setStatus(s) {
+  curStatus = s;
+  document.querySelectorAll('.status-opt').forEach(el => {
+    el.className = 'status-opt';
+    if (el.dataset.s === s) el.classList.add('sel-' + s);
+  });
+}
+
+function addWork() {
+  const c = db.clients.find(x => x.id === curCid);
+  works.push({ pid: '', name: '', base: 0, qty: 1, mult: c?.mult||1 });
+  renderWorks();
+}
+function removeWork(i) {
+  works.splice(i, 1);
+  renderWorks();
+}
+function onWorkPick(i, pid) {
+  const p = db.pricelist.find(x => x.id === pid);
+  if (p) { works[i].pid = p.id; works[i].name = p.name; works[i].base = p.price; }
+  else { works[i].pid = ''; works[i].name = ''; works[i].base = 0; }
+  renderWorks();
+}
+function onWorkQty(i, v) {
+  works[i].qty = Math.max(0.01, parseFloat(v)||1);
+  // if not manual, recalc; if manual, keep manualTotal
+  if (!works[i].manual) renderWorks();
+  else updateTotal();
+}
+function onWorkMult(i, v) {
+  const val = parseFloat(v);
+  if (val === 0 || isNaN(val)) return; // 0 reserved for manual indicator, ignore
+  works[i].mult = Math.max(0.01, val);
+  works[i].manual = false;
+  delete works[i].manualTotal;
+  renderWorks();
+}
+function onWorkTotal(i, v) {
+  const val = parseFloat(v);
+  if (isNaN(val) || v.trim() === '') {
+    works[i].manual = false;
+    delete works[i].manualTotal;
+  } else {
+    works[i].manual = true;
+    works[i].manualTotal = val;
+    works[i].mult = 0; // visual indicator only, not used in calc
+  }
+  updateTotal();
+}
+
+function renderWorks() {
+  const el = document.getElementById('work-list');
+  if (!works.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;font-family:var(--mono);margin-bottom:8px;">Работы не добавлены</div>';
+    updateTotal();
+    return;
+  }
+  el.innerHTML = works.map((w, i) => {
+    const isManual = !!w.manual;
+    const line = isManual ? w.manualTotal : w.base * w.qty * w.mult;
+    const totalVal = line > 0 ? String(line) : '';
+    const totalClass = 'work-total-field' + (isManual ? ' manual' : '');
+    const multVal = isManual ? 0 : w.mult;
+    const multClass = 'work-field-input' + (isManual ? ' mult-manual' : '');
+    return `<div class="work-item-row">
+      <button class="work-remove" onclick="removeWork(${i})">×</button>
+      <select class="work-select" onchange="onWorkPick(${i},this.value)">
+        <option value="">— выберите работу —</option>
+        ${db.pricelist.map(p => `<option value="${p.id}" ${w.pid===p.id?'selected':''}>${esc(p.name)} — ${fmoney(p.price)}</option>`).join('')}
+      </select>
+      <div class="work-grid">
+        <div>
+          <div class="work-field-label">КОЛ-ВО</div>
+          <input class="work-field-input" type="number" min="0.01" step="0.01" value="${w.qty}"
+            onchange="onWorkQty(${i},this.value)">
+        </div>
+        <div>
+          <div class="work-field-label">МНОЖИТЕЛЬ</div>
+          <input class="${multClass}" type="number" min="0" step="0.01" value="${multVal}"
+            onchange="onWorkMult(${i},this.value)">
+          ${isManual ? '<div class="mult-hint">РУЧ. ВВОД</div>' : ''}
+        </div>
+        <div>
+          <div class="work-field-label">ИТОГО ₽</div>
+          <input class="${totalClass}" type="number" min="0" step="0.01"
+            value="${totalVal}" placeholder="—"
+            oninput="onWorkTotal(${i},this.value)"
+            onchange="onWorkTotal(${i},this.value)">
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  updateTotal();
+}
+
+function calcTotal() {
+  return works.reduce((s, w) => {
+    if (w.manual) return s + (w.manualTotal || 0);
+    return s + w.base * w.qty * w.mult;
+  }, 0);
+}
+function updateTotal() {
+  document.getElementById('v-total').textContent = fmoney(calcTotal());
+}
+
+async function saveVisit() {
+  const date = document.getElementById('v-date').value;
+  const reason = document.getElementById('v-reason').value.trim();
+  if (!date) { alert('Укажите дату'); return; }
+  if (!reason) { alert('Укажите причину'); return; }
+  const data = {
+    cid: curCid,
+    date, reason,
+    status: curStatus,
+    works: JSON.parse(JSON.stringify(works)),
+    note: document.getElementById('v-note').value.trim(),
+    total: Math.round(calcTotal() * 100) / 100
+  };
+  const vid = document.getElementById('v-id').value;
+  if (vid) {
+    const i = db.visits.findIndex(x => x.id === vid);
+    if (i>=0) db.visits[i] = { ...db.visits[i], ...data };
+  } else {
+    db.visits.push({ id: uid(), ...data });
+  }
+  await save();
+  closeVisit();
+  expanded.add(curCid);
+  render();
+}
+
+// ══════════════════════════════════════════
+// MODAL HELPERS
+// ══════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) closeModal(el.id); });
+});
+
+// ══════════════════════════════════════════
+// CONFIRM
+// ══════════════════════════════════════════
+function showConfirm(title, text, cb) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-text').textContent = text;
+  confirmCb = cb;
+  document.getElementById('confirm').classList.add('open');
+}
+function closeConfirm() {
+  document.getElementById('confirm').classList.remove('open');
+  confirmCb = null;
+}
+document.getElementById('confirm-ok').onclick = async () => {
+  if (confirmCb) await confirmCb();
+  closeConfirm();
+};
+
+// ══════════════════════════════════════════
+// EXPORT / IMPORT
+// ══════════════════════════════════════════
+async function exportData() {
+  const json = JSON.stringify(db, null, 2);
+  const fileName = `ito_backup_${new Date().toISOString().slice(0,10)}.json`;
+
+  if (IS_CAP) {
+    try {
+      const { Filesystem, Share } = window.Capacitor.Plugins;
+      // Пишем во временный кэш
+      await Filesystem.writeFile({
+        path: fileName,
+        data: json,
+        directory: 'CACHE',
+        encoding: 'utf8',
+        recursive: true
+      });
+      // Получаем URI файла
+      const uriResult = await Filesystem.getUri({
+        path: fileName,
+        directory: 'CACHE'
+      });
+      // Открываем системный диалог «Поделиться»
+      await Share.share({
+        title: 'IT Аутсорс — резервная копия',
+        text: 'Резервная копия базы данных IT Аутсорс',
+        url: uriResult.uri,
+        dialogTitle: 'Сохранить или отправить'
+      });
+    } catch(e) {
+      // Share canceled — пользователь закрыл диалог, ничего не делаем
+      if (e && (e.message||'').toLowerCase().includes('cancel')) return;
+      console.warn('Export error:', e);
+      alert('Ошибка экспорта: ' + (e.message || e));
+    }
+    return;
+  }
+
+  // Браузер — стандартное скачивание
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importData() {
+  if (IS_CAP) {
+    // В APK — используем File Picker через input[type=file] внутри WebView
+    // Capacitor FilePicker плагин не установлен, используем стандартный input
+    document.getElementById('import-input').value = '';
+    document.getElementById('import-input').click();
+    return;
+  }
+  document.getElementById('import-input').value = '';
+  document.getElementById('import-input').click();
+}
+function validateDb(parsed) {
+  if (!parsed || typeof parsed !== 'object') return false;
+  if (!Array.isArray(parsed.clients) || !Array.isArray(parsed.pricelist) || !Array.isArray(parsed.visits)) return false;
+  for (const c of parsed.clients) {
+    if (!c || typeof c.id !== 'string' || typeof c.name !== 'string') return false;
+    if (c.mult !== undefined && typeof c.mult !== 'number') return false;
+    if (c.contacts !== undefined && !Array.isArray(c.contacts)) return false;
+  }
+  for (const p of parsed.pricelist) {
+    if (!p || typeof p.id !== 'string' || typeof p.name !== 'string') return false;
+    if (p.price !== undefined && typeof p.price !== 'number') return false;
+  }
+  for (const v of parsed.visits) {
+    if (!v || typeof v.id !== 'string' || typeof v.cid !== 'string') return false;
+    if (v.status !== undefined && !['inprogress','unpaid','done'].includes(v.status)) return false;
+    if (v.total !== undefined && typeof v.total !== 'number') return false;
+    if (v.works !== undefined && !Array.isArray(v.works)) return false;
+  }
+  return true;
+}
+
+function doImport(inp) {
+  const file = inp.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!validateDb(parsed)) { alert('Неверный формат или повреждённый файл'); return; }
+      showConfirm('Импортировать данные?', 'Текущие данные будут заменены данными из файла.', async () => {
+        db = parsed;
+        await save();
+        render();
+      });
+    } catch { alert('Ошибка чтения файла'); }
+  };
+  r.readAsText(file);
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+async function init() {
+  await load();
+  document.getElementById('clients-toolbar').style.display = 'block';
+  render();
+
+  // Автосохранение при уходе в фон (только в APK)
+  if (IS_CAP) {
+    const { App } = window.Capacitor.Plugins;
+    App.addListener('appStateChange', ({ isActive }) => {
+      if (!isActive) save();
+    });
+  }
+}
+
+init();
+</script>
+
+<!-- ── HELP SCREEN ── -->
+<div class="fullscreen" id="help-screen">
+  <div class="fs-header">
+    <button class="back-btn" onclick="closeHelp()">‹</button>
+    <div class="fs-title">Справка</div>
+  </div>
+  <div class="help-body">
+
+    <div class="help-section">
+      <div class="help-section-title">Установка на телефон</div>
+      <p class="help-p">Открой HTML-файл в <strong>Chrome</strong>, нажми меню (⋮) → <strong>«Добавить на главный экран»</strong>. Приложение появится как иконка и будет открываться без адресной строки. Интернет для работы не нужен.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">Шапка</div>
+      <p class="help-p"><strong>⬆ Импорт</strong> — загрузить ранее сохранённый JSON-файл резервной копии. Текущие данные будут заменены.</p>
+      <p class="help-p"><strong>⬇ Экспорт</strong> — сохранить все данные в JSON-файл на устройство. Делай периодически: данные хранятся в памяти браузера и пропадут при очистке кэша.</p>
+      <p class="help-p"><strong>?</strong> — эта справка.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">Вкладка Прайс</div>
+      <p class="help-p">Справочник всех видов работ с ценой за единицу. Отсюда выбираются позиции при создании выезда и при заполнении причины вызова.</p>
+      <p class="help-p">Строка поиска фильтрует список по названию работы — курсор не сбрасывается при вводе. Кнопка <strong>+</strong> добавляет новую работу. ✏️ редактирует, 🗑️ удаляет.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">Вкладка Клиенты</div>
+      <p class="help-p">Свёрнутая карточка показывает название, множитель <span class="help-badge hb-blue">×1.5</span>, телефон первого контакта и адрес. Тап раскрывает карточку.</p>
+      <p class="help-p"><strong>Фильтры</strong> под строкой поиска:</p>
+      <p class="help-p">
+        <strong>Все</strong> — полный список.<br>
+        <span class="help-badge hb-amber">🟡 В работе</span> — только клиенты с незавершёнными выездами.<br>
+        <span class="help-badge hb-red">🔴 Неопл.</span> — только клиенты с неоплаченными выездами.<br>
+        <span class="help-badge" style="background:rgba(136,146,170,0.12);color:var(--text2);border:1px solid var(--border);">✅ Сделано</span> — только клиенты с оплаченными выездами.<br>
+        При выборе фильтра карточки раскрываются автоматически и показывают только подходящие записи. На кнопках отображается количество таких выездов.
+      </p>
+      <p class="help-p"><strong>Поиск</strong> работает по названию организации, адресу, именам, должностям и телефонам контактных лиц.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">Карточка клиента</div>
+      <p class="help-p"><strong>Название</strong> — имя или название организации.</p>
+      <p class="help-p"><strong>Адрес</strong> — адрес объекта.</p>
+      <p class="help-p"><strong>Множитель</strong> — коэффициент наценки, применяется ко всем работам этого клиента по умолчанию. Например, 1.5 означает +50% к прайсовой цене.</p>
+      <p class="help-p"><strong>Контактные лица</strong> — можно добавить любое количество. Каждый контакт: имя, должность (директор, бухгалтер, начальник отдела...), телефон. В раскрытой карточке они показываются списком: должность · имя · телефон.</p>
+      <p class="help-p"><strong>Заметки</strong> — произвольный текст о клиенте.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">Выезд — создание и редактирование</div>
+      <p class="help-p">Кнопка <strong>«+ Добавить выезд»</strong> внутри карточки открывает полноэкранный редактор. Тап на существующий выезд открывает его для редактирования.</p>
+      <p class="help-p"><strong>Статусы выезда:</strong></p>
+      <p class="help-p">
+        <span class="help-badge hb-amber">В работе</span> — янтарный фон, работа ещё не завершена.<br>
+        <span class="help-badge hb-red">Не оплачено</span> — красный фон, выполнено но не оплачено.<br>
+        Оплачено — без цвета, закрытая история.
+      </p>
+      <p class="help-p"><strong>Причина вызова</strong> — текстовое поле. Кнопка <strong>«📋 Из прайса»</strong> открывает список работ: тап вставляет название в поле. Если поле уже заполнено — текст добавляется через запятую. Можно вставить несколько позиций подряд и затем отредактировать вручную.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">Работы и расчёт суммы</div>
+      <p class="help-p">Каждая строка работы содержит три поля: <strong>Кол-во</strong>, <strong>Множитель</strong>, <strong>Итого ₽</strong>.</p>
+      <p class="help-p"><strong>Автоматический режим</strong> (поле итого <span class="help-badge hb-blue">синее</span>): итого = цена из прайса × кол-во × множитель. Множитель наследуется от клиента, но для каждой строки его можно изменить отдельно.</p>
+      <p class="help-p"><strong>Ручной ввод</strong>: если вписать сумму прямо в поле Итого, оно становится <span class="help-badge hb-amber">янтарным</span>. Множитель тоже становится янтарным со значением 0 и подписью «РУЧ. ВВОД» — сигнал, что автоматический расчёт отключён для этой строки.</p>
+      <div class="help-tip">Чтобы вернуться к автоматическому расчёту — вписать любое ненулевое значение в поле Множитель. Поля вернутся к синему цвету.</div>
+      <p class="help-p" style="margin-top:10px;"><strong>Общий итог</strong> внизу — сумма всех строк, с учётом ручных значений.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">Резервное копирование</div>
+      <p class="help-p"><strong>В браузере:</strong> данные хранятся в localStorage. При очистке кэша браузера данные пропадут. Рекомендуется периодически делать экспорт (кнопка ⬇ в шапке).</p>
+      <p class="help-p"><strong>В APK-версии:</strong> данные автоматически сохраняются во внутреннюю папку приложения (файл <strong>ito_data.json</strong>) при каждом изменении и при сворачивании. Папка не видна в файловом менеджере, но данные не зависят от очистки кэша браузера и сохраняются между запусками. Дополнительно данные дублируются в localStorage.</p>
+      <p class="help-p">Кнопка <strong>⬇ Экспорт</strong> создаёт файл резервной копии с датой в имени и открывает диалог «Поделиться» — можно отправить в Telegram, на почту, сохранить в Google Drive или Downloads. Это единственный способ получить файл с данными на руки.</p>
+      <p class="help-p">Кнопка <strong>⬆ Импорт</strong> — загрузить ранее сохранённый файл. Текущие данные при импорте заменяются полностью.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">О программе</div>
+      <p class="help-p"><strong>IT Аутсорс</strong> — инструмент учёта клиентов, выездов и расчёта стоимости работ для выездного IT-специалиста.</p>
+      <p class="help-p">Разработано в <strong>CheshirCa Nest</strong>.<br>
+      Автор: <strong>Дядька Чешир</strong></p>
+      <p class="help-p">Связь:<br>
+        📧 <a href="mailto:cheshirca@gmail.com" style="color:var(--accent);text-decoration:none;">cheshirca@gmail.com</a><br>
+        ✈️ <a href="https://t.me/CheshirCa" style="color:var(--accent);text-decoration:none;">@CheshirCa</a> в Telegram
+      </p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">История версий</div>
+      <p class="help-p"><strong>v1.9</strong> — закрыты оставшиеся замечания аудита: сортировка клиентов и прайса защищена через safeStr; validateDb углублена до проверки типов вложенных полей (mult, price, status, total, works, contacts); confirm-ok переведён на async/await — диалог закрывается только после завершения сохранения.</p>
+      <p class="help-p"><strong>v1.8</strong> — аудит и исправления: удалён мёртвый элемент статуса в форме выезда; все сохранения переведены на await; ужесточена валидация импорта; рендер защищён от битых данных; унифицированы названия статусов; исправлена иконка пустого фильтра «В работе»; убран лишний вызов requestPermissions; исправлено описание цвета статуса в справке.</p>
+      <p class="help-p"><strong>v1.7</strong> — исправлена ошибка экспорта и записи базы в APK: Directory и Encoding теперь передаются строками ('DATA', 'CACHE', 'utf8') вместо enum-значений которые недоступны через window.Capacitor.Plugins.</p>
+      <p class="help-p"><strong>v1.6</strong> — хранилище данных в APK переключено на внутреннюю папку приложения (Directory.Data) — запись работает без разрешений на всех версиях Android.</p>
+      <p class="help-p"><strong>v1.5</strong> — экспорт в APK переделан: открывает системный диалог «Поделиться» — можно отправить файл в Telegram, на почту, сохранить в облако или в Downloads.</p>
+      <p class="help-p"><strong>v1.4</strong> — клиенты и прайс сортируются по алфавиту; при активном фильтре клиенты упорядочены по дате последней подходящей записи (свежие сверху).</p>
+      <p class="help-p"><strong>v1.3</strong> — статус «В работе» перекрашен в жёлтый, чтобы не конфликтовать с зелёным у «Сделано».</p>
+      <p class="help-p"><strong>v1.2</strong> — фильтр «Сделано» в списке клиентов.</p>
+      <p class="help-p"><strong>v1.1</strong> — поиск по прайсу.</p>
+      <p class="help-p"><strong>v1.0</strong> — первый релиз. Прайс, клиенты с множителем и контактными лицами, выезды со статусами и расчётом суммы, фильтры, поиск, ручной ввод итого, тема оформления, встроенная справка, поддержка Capacitor (автосохранение в файл на устройстве).</p>
+    </div>
+
+  </div>
+  <div style="text-align:center;padding:16px;font-size:11px;font-family:var(--mono);color:var(--text3);border-top:1px solid var(--border);margin-top:4px;">
+    © CheshirCa Nest · Дядька Чешир · v1.9
+  </div>
+</div>
+
+<script>
+function openHelp()  { document.getElementById('help-screen').classList.add('open'); }
+function closeHelp() { document.getElementById('help-screen').classList.remove('open'); }
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('ito_theme', isLight ? 'light' : 'dark');
+  updateThemeBtn(isLight);
+}
+function updateThemeBtn(isLight) {
+  document.getElementById('theme-btn').textContent = isLight ? '🌙' : '☀️';
+}
+(function initTheme() {
+  const saved = localStorage.getItem('ito_theme');
+  const isLight = saved === 'light';
+  if (isLight) document.body.classList.add('light');
+  updateThemeBtn(isLight);
+})();
+</script>
+</body>
+</html>
