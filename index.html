@@ -118,7 +118,7 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 12px;
-  padding-bottom: 72px;
+  padding-bottom: 110px;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -195,6 +195,60 @@ body {
 }
 .search-bar input::placeholder { color: var(--text3); }
 .search-icon { color: var(--text3); font-size: 15px; }
+
+/* ── COLLAPSED CLIENT TOTAL (unpaid filter) ── */
+.client-collapsed-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 16px 8px;
+  border-top: 1px solid var(--border);
+  background: var(--red-bg);
+}
+.client-collapsed-total-label {
+  font-size: 10px;
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--red);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.client-collapsed-total-value {
+  font-size: 14px;
+  font-family: var(--mono);
+  font-weight: 800;
+  color: var(--red);
+}
+
+/* ── GRAND TOTAL BAR ── */
+#grand-total-bar {
+  display: none;
+  position: fixed;
+  left: 0; right: 0;
+  bottom: calc(56px + env(safe-area-inset-bottom));
+  background: var(--bg2);
+  border-top: 1.5px solid var(--red-border);
+  padding: 8px 16px;
+  z-index: 99;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+#grand-total-bar.visible { display: flex; }
+.grand-total-label {
+  font-size: 11px;
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.grand-total-value {
+  font-size: 17px;
+  font-family: var(--mono);
+  font-weight: 800;
+  color: var(--red);
+}
 
 /* ── CLIENT CARD ── */
 .client-card {
@@ -1064,7 +1118,7 @@ select.form-input { appearance: auto; }
 <div class="topbar">
   <div>
     <div class="topbar-title" id="topbar-title">Клиенты</div>
-    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.15</div>
+    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.16</div>
   </div>
   <div class="topbar-right">
     <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Тема"></button>
@@ -1099,6 +1153,11 @@ select.form-input { appearance: auto; }
 </div>
 
 <div class="main" id="main"></div>
+
+<div id="grand-total-bar">
+  <span class="grand-total-label">Всего не оплачено</span>
+  <span class="grand-total-value" id="grand-total-value">0 ₽</span>
+</div>
 
 <div class="bottom-nav">
   <button class="nav-btn active" id="nav-clients" onclick="switchTab('clients')">
@@ -1443,6 +1502,7 @@ function renderClients() {
   }
 
   let h = '';
+  let grandTotal = 0;
   for (const c of list) {
     // when filtering by status — show only matching visits; otherwise all
     const allVisits = db.visits.filter(v => v.cid === c.id).sort((a,b) => b.date.localeCompare(a.date));
@@ -1455,6 +1515,9 @@ function renderClients() {
     const firstPhone = contacts.length ? contacts[0].phone : '';
     const subtitle = firstPhone || c.addr || '—';
 
+    const clientTotal = visits.reduce((s, v) => s + (Number(v.total)||0), 0);
+    if (statusFilter === 'unpaid') grandTotal += clientTotal;
+
     h += `<div class="client-card ${exp?'expanded':''}">
       <div class="client-header" onclick="toggleClient('${c.id}')">
         <div class="client-avatar">${esc(initial(c.name))}</div>
@@ -1464,6 +1527,11 @@ function renderClients() {
         </div>
         <div class="chevron">›</div>
       </div>
+      ${statusFilter === 'unpaid' && !exp && visits.length ? `
+      <div class="client-collapsed-total">
+        <span class="client-collapsed-total-label">Не оплачено · ${visits.length} ${visits.length === 1 ? 'выезд' : visits.length < 5 ? 'выезда' : 'выездов'}</span>
+        <span class="client-collapsed-total-value">${fmoney(clientTotal)}</span>
+      </div>` : ''}
       <div class="client-body">`;
 
     if (contacts.length) {
@@ -1512,6 +1580,14 @@ function renderClients() {
         <button class="act-btn danger" onclick="delClient('${c.id}')">🗑 Удалить</button>
       </div>
     </div></div>`;
+  }
+  // обновить полосу общей суммы
+  const bar = document.getElementById('grand-total-bar');
+  if (statusFilter === 'unpaid') {
+    document.getElementById('grand-total-value').textContent = fmoney(grandTotal);
+    bar.classList.add('visible');
+  } else {
+    bar.classList.remove('visible');
   }
   return h;
 }
@@ -2294,6 +2370,7 @@ init();
 
     <div class="help-section">
       <div class="help-section-title">История версий</div>
+      <p class="help-p"><strong>v1.16</strong> — при фильтре «Не оплачено»: у свёрнутых карточек — выноска с суммой долга и количеством выездов; над нижним меню — общая сумма по всем видимым клиентам.</p>
       <p class="help-p"><strong>v1.15</strong> — счёт по клиенту: кнопка «📄 Счёт» появляется в карточке при фильтре «Не оплачено». Модальное окно с чекбоксами по каждой работе, предпросмотром текста и кнопками «Поделиться» / «Скопировать».</p>
       <p class="help-p"><strong>v1.14</strong> — системная кнопка «Назад» на Android закрывает открытые экраны и модальные окна в правильном порядке; если всё закрыто — выходит из приложения.</p>
       <p class="help-p"><strong>v1.13</strong> — бейдж множителя перенесён со строки названия на строку метаданных — длинные названия организаций больше не обрезают его.</p>
@@ -2314,7 +2391,7 @@ init();
 
   </div>
   <div style="text-align:center;padding:16px;font-size:11px;font-family:var(--mono);color:var(--text3);border-top:1px solid var(--border);margin-top:4px;">
-    © CheshirCa Nest · Дядька Чешир · v1.15
+    © CheshirCa Nest · Дядька Чешир · v1.16
   </div>
 </div>
 
