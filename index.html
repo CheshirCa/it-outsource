@@ -1036,6 +1036,62 @@ select.form-input { appearance: auto; }
   margin-left: auto;
 }
 
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-family: var(--mono);
+  color: var(--text2);
+  z-index: 500;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  white-space: nowrap;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.toast.toast-error {
+  border-color: var(--red-border);
+  color: var(--red);
+  background: var(--red-bg);
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── CLIPBOARD FALLBACK ── */
+.clip-fallback {
+  margin-top: 10px;
+  display: none;
+}
+.clip-fallback.open { display: block; }
+.clip-fallback textarea {
+  width: 100%;
+  padding: 10px;
+  background: var(--bg3);
+  border: 1.5px solid var(--accent);
+  border-radius: 8px;
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text2);
+  resize: none;
+  height: 120px;
+}
+.clip-fallback-label {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text3);
+  margin-bottom: 5px;
+}
+
 /* ── INVOICE MODAL ── */
 .invoice-visit-block { margin-bottom: 14px; }
 .invoice-visit-header {
@@ -1139,7 +1195,7 @@ select.form-input { appearance: auto; }
 <div class="topbar">
   <div>
     <div class="topbar-title" id="topbar-title">Клиенты</div>
-    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.18</div>
+    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.20</div>
   </div>
   <div class="topbar-right">
     <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Тема"></button>
@@ -1327,12 +1383,18 @@ select.form-input { appearance: auto; }
     <div id="invoice-checklist"></div>
     <div class="invoice-section-label">Предпросмотр</div>
     <pre class="invoice-preview" id="invoice-preview"></pre>
+    <div class="clip-fallback" id="clip-fallback">
+      <div class="clip-fallback-label">Выделите текст и скопируйте вручную (Ctrl+A, Ctrl+C):</div>
+      <textarea id="clip-fallback-text" readonly onclick="this.select()"></textarea>
+    </div>
     <div class="invoice-act-row">
       <button class="invoice-share-btn" onclick="shareInvoice()">📤 Поделиться</button>
       <button class="invoice-copy-btn" id="invoice-copy-btn" onclick="copyInvoice()">📋 Скопировать</button>
     </div>
   </div>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <!-- hidden file input for import -->
 <input type="file" id="import-input" accept=".json" style="display:none" onchange="doImport(this)">
@@ -1347,6 +1409,19 @@ select.form-input { appearance: auto; }
 const IS_CAP = !!(window.Capacitor && window.Capacitor.isNativePlatform());
 
 // ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+let toastTimer = null;
+function showToast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.toggle('toast-error', isError);
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), isError ? 4000 : 2000);
+}
+
+// ══════════════════════════════════════════
 // DATA
 // ══════════════════════════════════════════
 let db = { clients: [], pricelist: [], visits: [] };
@@ -1354,6 +1429,8 @@ const FILE_NAME = 'ito_data.json';
 
 // Загрузка: сначала пробуем файл (только в APK), fallback — localStorage
 async function load() {
+  let raw = null;
+
   if (IS_CAP) {
     try {
       const { Filesystem } = window.Capacitor.Plugins;
@@ -1362,23 +1439,43 @@ async function load() {
         directory: 'DATA',
         encoding: 'utf8'
       });
-      db = JSON.parse(result.data);
-      return;
+      raw = result.data;
     } catch(e) {
       // файл ещё не создан — нормально при первом запуске
     }
   }
-  // fallback: localStorage (браузер или первый запуск APK)
-  try {
-    const s = localStorage.getItem('ito_v2');
-    if (s) db = JSON.parse(s);
-  } catch(e) {}
+
+  if (raw === null) {
+    try { raw = localStorage.getItem('ito_v2'); } catch(e) {}
+  }
+
+  if (!raw) return; // первый запуск — пустая БД по умолчанию
+
+  let parsed;
+  try { parsed = JSON.parse(raw); } catch(e) {
+    showToast('⚠ База данных повреждена — начат чистый старт', true);
+    return;
+  }
+
+  if (!validateDb(parsed)) {
+    showToast('⚠ Структура базы не прошла проверку — начат чистый старт', true);
+    return;
+  }
+
+  db = parsed;
 }
 
 // Сохранение: пишем и в файл (APK) и в localStorage (страховка)
 async function save() {
   const json = JSON.stringify(db);
-  localStorage.setItem('ito_v2', json);
+
+  // localStorage — всегда, с защитой от QuotaExceededError и приватного режима
+  try {
+    localStorage.setItem('ito_v2', json);
+  } catch(e) {
+    showToast('⚠ Не удалось сохранить в кэш браузера: ' + (e.name || e), true);
+  }
+
   if (IS_CAP) {
     try {
       const { Filesystem } = window.Capacitor.Plugins;
@@ -1391,6 +1488,7 @@ async function save() {
       });
     } catch(e) {
       console.warn('Filesystem write error:', e);
+      showToast('⚠ Ошибка записи в файл — данные сохранены только в кэш', true);
     }
   }
 }
@@ -1431,12 +1529,35 @@ function switchTab(t) {
 // RENDER
 // ══════════════════════════════════════════
 function render() {
-  if (tab === 'clients') {
-    updateToolbar();
-    document.getElementById('main').innerHTML = renderClients();
-  } else {
-    document.getElementById('main').innerHTML = renderPrice();
+  try {
+    if (tab === 'clients') {
+      updateToolbar();
+      document.getElementById('main').innerHTML = renderClients();
+    } else {
+      document.getElementById('main').innerHTML = renderPrice();
+    }
+  } catch(e) {
+    console.error('render() error:', e);
+    document.getElementById('main').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <div class="empty-text">Ошибка отображения данных.<br>
+        <button onclick="resetToSafeState()" style="margin-top:14px;padding:10px 20px;background:var(--red);color:white;border:none;border-radius:10px;font-size:14px;font-family:var(--sans);font-weight:700;cursor:pointer;">Сбросить базу и начать заново</button><br><br>
+        Или импортируйте резервную копию кнопкой ⬆ в шапке.</div>
+      </div>`;
   }
+}
+
+function resetToSafeState() {
+  showConfirm(
+    'Сбросить базу данных?',
+    'Все данные будут удалены. Это действие нельзя отменить.',
+    async () => {
+      db = { clients: [], pricelist: [], visits: [] };
+      await save();
+      render();
+    }
+  );
 }
 
 function updateToolbar() {
@@ -2124,20 +2245,48 @@ async function importData() {
 function validateDb(parsed) {
   if (!parsed || typeof parsed !== 'object') return false;
   if (!Array.isArray(parsed.clients) || !Array.isArray(parsed.pricelist) || !Array.isArray(parsed.visits)) return false;
+
+  const clientIds = new Set();
   for (const c of parsed.clients) {
-    if (!c || typeof c.id !== 'string' || typeof c.name !== 'string') return false;
-    if (c.mult !== undefined && typeof c.mult !== 'number') return false;
-    if (c.contacts !== undefined && !Array.isArray(c.contacts)) return false;
+    if (!c || typeof c.id !== 'string' || !c.id) return false;
+    if (typeof c.name !== 'string') return false;
+    if (c.mult !== undefined && !Number.isFinite(c.mult)) return false;
+    if (c.contacts !== undefined) {
+      if (!Array.isArray(c.contacts)) return false;
+      for (const ct of c.contacts) {
+        if (!ct || typeof ct !== 'object') return false;
+        if (ct.name !== undefined && typeof ct.name !== 'string') return false;
+        if (ct.role !== undefined && typeof ct.role !== 'string') return false;
+        if (ct.phone !== undefined && typeof ct.phone !== 'string') return false;
+      }
+    }
+    clientIds.add(c.id);
   }
+
   for (const p of parsed.pricelist) {
-    if (!p || typeof p.id !== 'string' || typeof p.name !== 'string') return false;
-    if (p.price !== undefined && typeof p.price !== 'number') return false;
+    if (!p || typeof p.id !== 'string' || !p.id) return false;
+    if (typeof p.name !== 'string') return false;
+    if (p.price !== undefined && !Number.isFinite(p.price)) return false;
   }
+
+  const dateRe = /^\d{4}-\d{2}-\d{2}$/;
   for (const v of parsed.visits) {
-    if (!v || typeof v.id !== 'string' || typeof v.cid !== 'string') return false;
+    if (!v || typeof v.id !== 'string' || !v.id) return false;
+    if (typeof v.cid !== 'string' || !clientIds.has(v.cid)) return false;
     if (v.status !== undefined && !['inprogress','unpaid','done'].includes(v.status)) return false;
-    if (v.total !== undefined && typeof v.total !== 'number') return false;
-    if (v.works !== undefined && !Array.isArray(v.works)) return false;
+    if (v.total !== undefined && !Number.isFinite(v.total)) return false;
+    if (v.date !== undefined && !dateRe.test(v.date)) return false;
+    if (v.works !== undefined) {
+      if (!Array.isArray(v.works)) return false;
+      for (const w of v.works) {
+        if (!w || typeof w !== 'object') return false;
+        if (w.base !== undefined && !Number.isFinite(w.base)) return false;
+        if (w.qty  !== undefined && !Number.isFinite(w.qty))  return false;
+        if (w.mult !== undefined && !Number.isFinite(w.mult)) return false;
+        if (w.manualTotal !== undefined && !Number.isFinite(w.manualTotal)) return false;
+        if (w.manual !== undefined && typeof w.manual !== 'boolean') return false;
+      }
+    }
   }
   return true;
 }
@@ -2151,13 +2300,37 @@ function doImport(inp) {
       const parsed = JSON.parse(e.target.result);
       if (!validateDb(parsed)) { alert('Неверный формат или повреждённый файл'); return; }
       showConfirm('Импортировать данные?', 'Текущие данные будут заменены данными из файла.', async () => {
+        const backup = JSON.parse(JSON.stringify(db)); // снапшот до замены
         db = parsed;
         await save();
         render();
+        // предложить откат через toast с кнопкой
+        const el = document.getElementById('toast');
+        el.innerHTML = 'Импорт выполнен. <span onclick="rollbackImport()" style="color:var(--accent);cursor:pointer;text-decoration:underline;">Отменить</span>';
+        el.classList.remove('toast-error');
+        el.classList.add('show');
+        window._importBackup = backup;
+        if (window._importToastTimer) clearTimeout(window._importToastTimer);
+        window._importToastTimer = setTimeout(() => {
+          el.classList.remove('show');
+          el.innerHTML = '';
+          window._importBackup = null;
+        }, 8000);
       });
     } catch { alert('Ошибка чтения файла'); }
   };
   r.readAsText(file);
+}
+
+async function rollbackImport() {
+  if (!window._importBackup) return;
+  db = window._importBackup;
+  window._importBackup = null;
+  clearTimeout(window._importToastTimer);
+  document.getElementById('toast').classList.remove('show');
+  await save();
+  render();
+  showToast('Откат выполнен');
 }
 
 // ══════════════════════════════════════════
@@ -2181,6 +2354,7 @@ function openInvoice(cid) {
   const client = db.clients.find(x => x.id === cid);
   document.getElementById('invoice-modal-title').textContent =
     'Счёт · ' + safeStr(client?.name);
+  document.getElementById('clip-fallback').classList.remove('open');
   renderInvoiceChecklist(visits);
   renderInvoicePreview();
   openModal('invoice-modal');
@@ -2269,7 +2443,7 @@ async function shareInvoice() {
       await Share.share({ text, dialogTitle: 'Отправить счёт' });
     } catch(e) {
       if (!(safeStr(e?.message).toLowerCase().includes('cancel')))
-        alert('Ошибка: ' + (e?.message || e));
+        showToast('⚠ Ошибка отправки: ' + (e?.message || e), true);
     }
     return;
   }
@@ -2281,15 +2455,25 @@ async function shareInvoice() {
 
 async function copyInvoice() {
   const text = buildInvoiceText();
-  try {
-    await navigator.clipboard.writeText(text);
-    const btn = document.getElementById('invoice-copy-btn');
-    const orig = btn.textContent;
-    btn.textContent = '✓ Скопировано';
-    setTimeout(() => { btn.textContent = orig; }, 1800);
-  } catch(e) {
-    alert('Не удалось скопировать в буфер');
+  const fallback = document.getElementById('clip-fallback');
+  const btn = document.getElementById('invoice-copy-btn');
+  // попытка через API буфера
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      const orig = btn.textContent;
+      btn.textContent = '✓ Скопировано';
+      fallback.classList.remove('open');
+      setTimeout(() => { btn.textContent = orig; }, 1800);
+      return;
+    } catch(e) { /* fallback ниже */ }
   }
+  // fallback — показать textarea для ручного копирования
+  const ta = document.getElementById('clip-fallback-text');
+  ta.value = text;
+  fallback.classList.add('open');
+  setTimeout(() => { ta.select(); }, 50);
+  btn.textContent = '📋 Скопировать';
 }
 
 // ══════════════════════════════════════════
@@ -2425,6 +2609,8 @@ init();
 
     <div class="help-section">
       <div class="help-section-title">История версий</div>
+      <p class="help-p"><strong>v1.20</strong> — валидация базы при загрузке из хранилища; recovery-кнопка «Сбросить» при ошибке рендера; резервная копия и откат после импорта (8 сек); защита localStorage от QuotaExceededError; ошибки Share переведены на toast.</p>
+      <p class="help-p"><strong>v1.19</strong> — аудит надёжности: toast-уведомление при сбое записи в файл на Android; углублённая валидация импорта (contacts[], works[], Number.isFinite, формат даты, проверка cid); защита render() от падения данных; fallback для буфера обмена в небезопасном контексте.</p>
       <p class="help-p"><strong>v1.18</strong> — кнопка ⇅ слева от «+» сворачивает и разворачивает все карточки клиентов разом; при фильтре «Не оплачено» поднимается над полосой итого вместе с «+».</p>
       <p class="help-p"><strong>v1.17</strong> — кнопка «+» поднимается над полосой общей суммы при фильтре «Не оплачено».</p>
       <p class="help-p"><strong>v1.16</strong> — при фильтре «Не оплачено»: у свёрнутых карточек — выноска с суммой долга и количеством выездов; над нижним меню — общая сумма по всем видимым клиентам.</p>
@@ -2448,7 +2634,7 @@ init();
 
   </div>
   <div style="text-align:center;padding:16px;font-size:11px;font-family:var(--mono);color:var(--text3);border-top:1px solid var(--border);margin-top:4px;">
-    © CheshirCa Nest · Дядька Чешир · v1.18
+    © CheshirCa Nest · Дядька Чешир · v1.20
   </div>
 </div>
 
