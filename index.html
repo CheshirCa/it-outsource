@@ -172,6 +172,26 @@ body {
   transition: transform 0.12s, box-shadow 0.12s, bottom 0.15s;
 }
 .fab.raised { bottom: 110px; }
+.fab-collapse {
+  position: fixed;
+  bottom: 68px; right: 80px;
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  transition: transform 0.12s, bottom 0.15s;
+}
+.fab-collapse.raised { bottom: 110px; }
+.fab-collapse:active { transform: scale(0.93); }
 .fab:active { transform: scale(0.93); box-shadow: 0 2px 10px rgba(78,123,239,0.3); }
 
 /* ── SEARCH ── */
@@ -1119,7 +1139,7 @@ select.form-input { appearance: auto; }
 <div class="topbar">
   <div>
     <div class="topbar-title" id="topbar-title">Клиенты</div>
-    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.17</div>
+    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.18</div>
   </div>
   <div class="topbar-right">
     <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Тема"></button>
@@ -1169,6 +1189,7 @@ select.form-input { appearance: auto; }
   </button>
 </div>
 
+<button class="fab-collapse" id="fab-collapse" onclick="toggleExpandAll()" title="Свернуть / развернуть всё">⇅</button>
 <button class="fab" id="fab" onclick="handleFab()">+</button>
 
 <!-- ── CLIENT MODAL ── -->
@@ -1402,6 +1423,7 @@ function switchTab(t) {
   document.getElementById('topbar-title').textContent = t === 'clients' ? 'Клиенты' : 'Прайс';
   document.getElementById('clients-toolbar').style.display = t === 'clients' ? 'block' : 'none';
   document.getElementById('price-toolbar').style.display   = t === 'price'   ? 'block' : 'none';
+  document.getElementById('fab-collapse').style.display    = t === 'clients' ? 'flex'  : 'none';
   render();
 }
 
@@ -1585,13 +1607,16 @@ function renderClients() {
   // обновить полосу общей суммы
   const bar = document.getElementById('grand-total-bar');
   const fab = document.getElementById('fab');
+  const fabCollapse = document.getElementById('fab-collapse');
   if (statusFilter === 'unpaid') {
     document.getElementById('grand-total-value').textContent = fmoney(grandTotal);
     bar.classList.add('visible');
     fab.classList.add('raised');
+    fabCollapse.classList.add('raised');
   } else {
     bar.classList.remove('visible');
     fab.classList.remove('raised');
+    fabCollapse.classList.remove('raised');
   }
   return h;
 }
@@ -1645,6 +1670,32 @@ function setFilter(f) {
   }
   render();
 }
+function toggleExpandAll() {
+  // определяем видимый список клиентов (с учётом фильтра и поиска)
+  let list = db.clients.filter(c => {
+    if (search) {
+      const s = search.toLowerCase();
+      if (!safeStr(c.name).toLowerCase().includes(s) &&
+          !safeStr(c.addr).toLowerCase().includes(s) &&
+          !(c.contacts||[]).some(ct =>
+            safeStr(ct.name).toLowerCase().includes(s) ||
+            safeStr(ct.phone).includes(s) ||
+            safeStr(ct.role).toLowerCase().includes(s)
+          )) return false;
+    }
+    if (statusFilter) return db.visits.some(v => v.cid === c.id && v.status === statusFilter);
+    return true;
+  });
+  const ids = list.map(c => c.id);
+  const allExpanded = ids.every(id => expanded.has(id));
+  if (allExpanded) {
+    ids.forEach(id => expanded.delete(id));
+  } else {
+    ids.forEach(id => expanded.add(id));
+  }
+  render();
+}
+
 function toggleClient(id) {
   expanded.has(id) ? expanded.delete(id) : expanded.add(id);
   render();
@@ -2374,6 +2425,7 @@ init();
 
     <div class="help-section">
       <div class="help-section-title">История версий</div>
+      <p class="help-p"><strong>v1.18</strong> — кнопка ⇅ слева от «+» сворачивает и разворачивает все карточки клиентов разом; при фильтре «Не оплачено» поднимается над полосой итого вместе с «+».</p>
       <p class="help-p"><strong>v1.17</strong> — кнопка «+» поднимается над полосой общей суммы при фильтре «Не оплачено».</p>
       <p class="help-p"><strong>v1.16</strong> — при фильтре «Не оплачено»: у свёрнутых карточек — выноска с суммой долга и количеством выездов; над нижним меню — общая сумма по всем видимым клиентам.</p>
       <p class="help-p"><strong>v1.15</strong> — счёт по клиенту: кнопка «📄 Счёт» появляется в карточке при фильтре «Не оплачено». Модальное окно с чекбоксами по каждой работе, предпросмотром текста и кнопками «Поделиться» / «Скопировать».</p>
@@ -2396,7 +2448,7 @@ init();
 
   </div>
   <div style="text-align:center;padding:16px;font-size:11px;font-family:var(--mono);color:var(--text3);border-top:1px solid var(--border);margin-top:4px;">
-    © CheshirCa Nest · Дядька Чешир · v1.17
+    © CheshirCa Nest · Дядька Чешир · v1.18
   </div>
 </div>
 
