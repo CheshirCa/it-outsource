@@ -1188,6 +1188,105 @@ select.form-input { appearance: auto; }
   font-weight: 700;
   cursor: pointer;
 }
+
+/* ── SETTINGS ── */
+.settings-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  padding-bottom: 40px;
+}
+.settings-section {
+  margin-bottom: 24px;
+}
+.settings-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  font-family: var(--mono);
+  color: var(--accent);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 14px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.settings-row-sub {
+  font-size: 12px;
+  color: var(--text3);
+  font-family: var(--mono);
+  margin-top: 2px;
+}
+/* toggle switch */
+.toggle {
+  position: relative;
+  width: 44px; height: 26px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: 13px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.toggle input:checked + .toggle-track {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.toggle-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s;
+  pointer-events: none;
+}
+.toggle input:checked ~ .toggle-thumb { transform: translateX(18px); }
+
+.hidden-client-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.hidden-client-row:last-child { border-bottom: none; }
+.hidden-client-row input[type=checkbox] {
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.hidden-client-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+.hidden-client-addr {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text3);
+}
 </style>
 </head>
 <body>
@@ -1195,7 +1294,7 @@ select.form-input { appearance: auto; }
 <div class="topbar">
   <div>
     <div class="topbar-title" id="topbar-title">Клиенты</div>
-    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.20</div>
+    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.21</div>
   </div>
   <div class="topbar-right">
     <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Тема"></button>
@@ -1242,6 +1341,9 @@ select.form-input { appearance: auto; }
   </button>
   <button class="nav-btn" id="nav-price" onclick="switchTab('price')">
     <span class="nav-icon">📋</span>Прайс
+  </button>
+  <button class="nav-btn" id="nav-settings" onclick="openSettings()">
+    <span class="nav-icon">⚙️</span>Настройки
   </button>
 </div>
 
@@ -1309,7 +1411,7 @@ select.form-input { appearance: auto; }
 <div class="fullscreen" id="visit-screen">
   <div class="fs-header">
     <button class="back-btn" onclick="closeVisit()">‹</button>
-    <div class="fs-title" id="fs-title">Выезд</div>
+    <div class="fs-title" id="fs-title">Обращение</div>
     <button class="fs-save-btn" onclick="saveVisit()">Сохранить</button>
   </div>
   <div class="fs-body">
@@ -1355,7 +1457,7 @@ select.form-input { appearance: auto; }
 
     <div class="section-sep">Заметки</div>
     <div class="form-group">
-      <textarea class="form-input" id="v-note" placeholder="Произвольные заметки по выезду..."></textarea>
+      <textarea class="form-input" id="v-note" placeholder="Произвольные заметки по обращению..."></textarea>
     </div>
   </div>
 </div>
@@ -1407,6 +1509,32 @@ select.form-input { appearance: auto; }
 // В браузере все вызовы плагинов тихо пропускаются —
 // приложение продолжает работать через localStorage как раньше.
 const IS_CAP = !!(window.Capacitor && window.Capacitor.isNativePlatform());
+
+// ══════════════════════════════════════════
+// CONFIG (settings, stored separately from db)
+// ══════════════════════════════════════════
+let cfg = { invoiceHeader: '', invoiceFooter: '', showMult: true, hiddenClients: [] };
+
+function loadCfg() {
+  try {
+    const s = localStorage.getItem('ito_cfg');
+    if (s) {
+      const parsed = JSON.parse(s);
+      if (parsed && typeof parsed === 'object') {
+        if (typeof parsed.invoiceHeader === 'string') cfg.invoiceHeader = parsed.invoiceHeader;
+        if (typeof parsed.invoiceFooter === 'string') cfg.invoiceFooter = parsed.invoiceFooter;
+        if (typeof parsed.showMult === 'boolean') cfg.showMult = parsed.showMult;
+        if (Array.isArray(parsed.hiddenClients)) cfg.hiddenClients = parsed.hiddenClients.filter(x => typeof x === 'string');
+      }
+    }
+  } catch(e) {}
+}
+
+function saveCfg() {
+  try { localStorage.setItem('ito_cfg', JSON.stringify(cfg)); } catch(e) {}
+}
+
+function isClientHidden(id) { return cfg.hiddenClients.includes(id); }
 
 // ══════════════════════════════════════════
 // TOAST
@@ -1561,9 +1689,10 @@ function resetToSafeState() {
 }
 
 function updateToolbar() {
-  const cntInprogress = db.visits.filter(v => v.status === 'inprogress').length;
-  const cntUnpaid     = db.visits.filter(v => v.status === 'unpaid').length;
-  const cntDone       = db.visits.filter(v => v.status === 'done').length;
+  const visible = v => !isClientHidden(v.cid);
+  const cntInprogress = db.visits.filter(v => v.status === 'inprogress' && visible(v)).length;
+  const cntUnpaid     = db.visits.filter(v => v.status === 'unpaid'     && visible(v)).length;
+  const cntDone       = db.visits.filter(v => v.status === 'done'       && visible(v)).length;
   const el = f => document.getElementById(f);
   el('fb-all').className        = 'filter-btn' + (!statusFilter ? ' active-all' : '');
   el('fb-inprogress').className = 'filter-btn' + (statusFilter === 'inprogress' ? ' active-inprogress' : '');
@@ -1602,6 +1731,7 @@ function safeStr(v) { return typeof v === 'string' ? v : String(v||''); }
 function renderClients() {
   // text search
   let list = db.clients.filter(c => {
+    if (isClientHidden(c.id)) return false;
     if (!search) return true;
     const s = search.toLowerCase();
     if (safeStr(c.name).toLowerCase().includes(s)) return true;
@@ -1667,13 +1797,13 @@ function renderClients() {
         <div class="client-avatar">${esc(initial(c.name))}</div>
         <div class="client-info">
           <div class="client-name">${esc(c.name)}</div>
-          <div class="client-meta"><span class="mult-badge" style="margin-left:0;margin-right:6px;">×${c.mult}</span>${esc(subtitle)}${c.addr && firstPhone ? ' · '+esc(c.addr) : ''}</div>
+          <div class="client-meta">${cfg.showMult ? `<span class="mult-badge" style="margin-left:0;margin-right:6px;">×${c.mult}</span>` : ''}${esc(subtitle)}${c.addr && firstPhone ? ' · '+esc(c.addr) : ''}</div>
         </div>
         <div class="chevron">›</div>
       </div>
       ${statusFilter === 'unpaid' && !exp && visits.length ? `
       <div class="client-collapsed-total">
-        <span class="client-collapsed-total-label">Не оплачено · ${visits.length} ${visits.length === 1 ? 'выезд' : visits.length < 5 ? 'выезда' : 'выездов'}</span>
+        <span class="client-collapsed-total-label">Не оплачено · ${visits.length} ${visits.length === 1 ? 'обращение' : visits.length < 5 ? 'обращения' : 'обращений'}</span>
         <span class="client-collapsed-total-value">${fmoney(clientTotal)}</span>
       </div>` : ''}
       <div class="client-body">`;
@@ -1691,7 +1821,7 @@ function renderClients() {
     }
 
     if (!visits.length) {
-      h += `<div style="padding:12px 16px;color:var(--text3);font-size:13px;font-family:var(--mono);">Выездов нет</div>`;
+      h += `<div style="padding:12px 16px;color:var(--text3);font-size:13px;font-family:var(--mono);">Обращений нет</div>`;
     } else {
       for (const v of visits) {
         const stl = v.status;
@@ -1717,7 +1847,7 @@ function renderClients() {
       }
     }
 
-    h += `<button class="add-visit-btn" onclick="openVisitNew('${c.id}')">+ Добавить выезд</button>
+    h += `<button class="add-visit-btn" onclick="openVisitNew('${c.id}')">+ Добавить обращение</button>
       <div class="client-actions">
         <button class="act-btn" onclick="openClientEdit('${c.id}')">✏️ Изменить</button>
         ${statusFilter === 'unpaid' ? `<button class="act-btn" style="color:var(--accent);border-color:rgba(78,123,239,0.4);" onclick="openInvoice('${c.id}')">📄 Счёт</button>` : ''}
@@ -1904,7 +2034,7 @@ async function saveClient() {
 }
 function delClient(id) {
   const c = db.clients.find(x => x.id === id);
-  showConfirm(`Удалить «${c?.name}»?`, 'Все выезды клиента тоже будут удалены.', async () => {
+  showConfirm(`Удалить «${c?.name}»?`, 'Все обращения клиента тоже будут удалены.', async () => {
     db.clients = db.clients.filter(x => x.id !== id);
     db.visits = db.visits.filter(x => x.cid !== id);
     expanded.delete(id);
@@ -1964,7 +2094,7 @@ function openVisitNew(cid) {
   document.getElementById('v-date').value = new Date().toISOString().slice(0,10);
   document.getElementById('v-reason').value = '';
   document.getElementById('v-note').value = '';
-  document.getElementById('fs-title').textContent = c?.name || 'Выезд';
+  document.getElementById('fs-title').textContent = c?.name || 'Обращение';
   setStatus('inprogress');
   renderWorks();
   document.getElementById('visit-screen').classList.add('open');
@@ -1980,7 +2110,7 @@ function openVisitEdit(vid, cid) {
   document.getElementById('v-date').value = v.date;
   document.getElementById('v-reason').value = v.reason;
   document.getElementById('v-note').value = v.note||'';
-  document.getElementById('fs-title').textContent = c?.name || 'Выезд';
+  document.getElementById('fs-title').textContent = c?.name || 'Обращение';
   setStatus(v.status);
   renderWorks();
   document.getElementById('visit-screen').classList.add('open');
@@ -2363,7 +2493,7 @@ function openInvoice(cid) {
 function renderInvoiceChecklist(visits) {
   const el = document.getElementById('invoice-checklist');
   if (!visits || !visits.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:13px;font-family:var(--mono);padding:8px 0;">Нет неоплаченных выездов</div>';
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;font-family:var(--mono);padding:8px 0;">Нет неоплаченных обращений</div>';
     return;
   }
   let h = '';
@@ -2408,7 +2538,11 @@ function buildInvoiceText() {
     .filter(v => v.cid === invoiceCid && v.status === 'unpaid')
     .sort((a, b) => b.date.localeCompare(a.date));
   const sep = '━━━━━━━━━━━━━━━━━━━━━━━━';
-  const lines = [`Счёт · ${clientName}`, sep, ''];
+  const lines = [];
+  if (cfg.invoiceHeader.trim()) {
+    lines.push(cfg.invoiceHeader.trim(), '');
+  }
+  lines.push(`Счёт · ${clientName}`, sep, '');
   let grandTotal = 0;
   let hasContent = false;
   for (const v of visits) {
@@ -2428,6 +2562,9 @@ function buildInvoiceText() {
   if (!hasContent) lines.push('(нет выбранных позиций)', '');
   lines.push(sep);
   lines.push(`Итого: ${fmoney(grandTotal)}`);
+  if (cfg.invoiceFooter.trim()) {
+    lines.push('', cfg.invoiceFooter.trim());
+  }
   return lines.join('\n');
 }
 
@@ -2477,9 +2614,69 @@ async function copyInvoice() {
 }
 
 // ══════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════
+function openSettings() {
+  // sync UI with current cfg
+  document.getElementById('cfg-show-mult').checked = cfg.showMult;
+  document.getElementById('cfg-invoice-header').value = cfg.invoiceHeader;
+  document.getElementById('cfg-invoice-footer').value = cfg.invoiceFooter;
+  renderSettingsClients();
+  document.getElementById('settings-screen').classList.add('open');
+  document.getElementById('nav-settings').classList.add('active');
+}
+
+function closeSettings() {
+  document.getElementById('settings-screen').classList.remove('open');
+  document.getElementById('nav-settings').classList.remove('active');
+}
+
+function renderSettingsClients() {
+  const el = document.getElementById('settings-clients-list');
+  if (!db.clients.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;font-family:var(--mono);">Клиентов нет</div>';
+    return;
+  }
+  const sorted = [...db.clients].sort((a, b) => safeStr(a.name).localeCompare(safeStr(b.name), 'ru'));
+  el.innerHTML = sorted.map(c => {
+    const hidden = isClientHidden(c.id);
+    return `<label class="hidden-client-row">
+      <input type="checkbox" ${!hidden ? 'checked' : ''} onchange="onClientVisibility('${esc(c.id)}',this.checked)">
+      <div>
+        <div class="hidden-client-name">${esc(c.name)}</div>
+        ${c.addr ? `<div class="hidden-client-addr">${esc(c.addr)}</div>` : ''}
+      </div>
+    </label>`;
+  }).join('');
+}
+
+function onClientVisibility(id, visible) {
+  if (visible) {
+    cfg.hiddenClients = cfg.hiddenClients.filter(x => x !== id);
+  } else {
+    if (!cfg.hiddenClients.includes(id)) cfg.hiddenClients.push(id);
+  }
+  saveCfg();
+  render(); // обновить список и счётчики
+}
+
+function onCfgShowMult(val) {
+  cfg.showMult = val;
+  saveCfg();
+  render();
+}
+
+function onCfgInvoiceText() {
+  cfg.invoiceHeader = document.getElementById('cfg-invoice-header').value;
+  cfg.invoiceFooter = document.getElementById('cfg-invoice-footer').value;
+  saveCfg();
+}
+
+// ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
 async function init() {
+  loadCfg();
   await load();
   document.getElementById('clients-toolbar').style.display = 'block';
   render();
@@ -2496,6 +2693,9 @@ async function init() {
       // порядок приоритета: confirm → help → visit → modals → exit
       if (document.getElementById('confirm').classList.contains('open')) {
         closeConfirm(); return;
+      }
+      if (document.getElementById('settings-screen').classList.contains('open')) {
+        closeSettings(); return;
       }
       if (document.getElementById('help-screen').classList.contains('open')) {
         closeHelp(); return;
@@ -2517,6 +2717,54 @@ async function init() {
 
 init();
 </script>
+
+<!-- ── SETTINGS SCREEN ── -->
+<div class="fullscreen" id="settings-screen">
+  <div class="fs-header">
+    <button class="back-btn" onclick="closeSettings()">‹</button>
+    <div class="fs-title">Настройки</div>
+  </div>
+  <div class="settings-body">
+
+    <div class="settings-section">
+      <div class="settings-section-title">Интерфейс</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Показывать множитель</div>
+          <div class="settings-row-sub">Бейдж ×N в карточке клиента</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-show-mult" onchange="onCfgShowMult(this.checked)">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Счёт — шапка и подвал</div>
+      <div class="form-group">
+        <label class="form-label">Шапка счёта</label>
+        <textarea class="form-input" id="cfg-invoice-header" rows="3"
+          placeholder="ИП Иванов Иван Иванович&#10;ИНН 123456789012&#10;Тел: +7 900 000-00-00"
+          oninput="onCfgInvoiceText()"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Подвал счёта</label>
+        <textarea class="form-input" id="cfg-invoice-footer" rows="3"
+          placeholder="Оплата по реквизитам или на карту&#10;Спасибо за обращение!"
+          oninput="onCfgInvoiceText()"></textarea>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Скрытые клиенты</div>
+      <p style="font-size:13px;color:var(--text3);font-family:var(--mono);margin-bottom:12px;">Снятые клиенты не отображаются в списках и не участвуют в подсчётах.</p>
+      <div id="settings-clients-list"></div>
+    </div>
+
+  </div>
+</div>
 
 <!-- ── HELP SCREEN ── -->
 <div class="fullscreen" id="help-screen">
@@ -2540,22 +2788,53 @@ init();
 
     <div class="help-section">
       <div class="help-section-title">Вкладка Прайс</div>
-      <p class="help-p">Справочник всех видов работ с ценой за единицу. Отсюда выбираются позиции при создании выезда и при заполнении причины вызова.</p>
+      <p class="help-p">Справочник всех видов работ с ценой за единицу. Отсюда выбираются позиции при создании обращения и при заполнении причины вызова.</p>
       <p class="help-p">Строка поиска фильтрует список по названию работы — курсор не сбрасывается при вводе. Кнопка <strong>+</strong> добавляет новую работу. ✏️ редактирует, 🗑️ удаляет.</p>
     </div>
 
     <div class="help-section">
       <div class="help-section-title">Вкладка Клиенты</div>
       <p class="help-p">Свёрнутая карточка показывает название, множитель <span class="help-badge hb-blue">×1.5</span>, телефон первого контакта и адрес. Тап раскрывает карточку.</p>
+      <p class="help-p"><strong>Кнопки управления</strong> в правом нижнем углу:</p>
+      <p class="help-p"><strong>+</strong> — добавить нового клиента.<br>
+      <strong>⇅</strong> — свернуть или развернуть все карточки разом. Если все раскрыты — сворачивает, иначе разворачивает. Учитывает текущий фильтр и поиск.</p>
       <p class="help-p"><strong>Фильтры</strong> под строкой поиска:</p>
       <p class="help-p">
         <strong>Все</strong> — полный список.<br>
-        <span class="help-badge hb-amber">🟡 В работе</span> — только клиенты с незавершёнными выездами.<br>
-        <span class="help-badge hb-red">🔴 Неопл.</span> — только клиенты с неоплаченными выездами.<br>
-        <span class="help-badge" style="background:rgba(136,146,170,0.12);color:var(--text2);border:1px solid var(--border);">✅ Сделано</span> — только клиенты с оплаченными выездами.<br>
-        При выборе фильтра карточки раскрываются автоматически и показывают только подходящие записи. На кнопках отображается количество таких выездов.
+        <span class="help-badge hb-amber">🟡 В работе</span> — только клиенты с незавершёнными обращениями.<br>
+        <span class="help-badge hb-red">🔴 Неопл.</span> — только клиенты с неоплаченными обращениями. У свёрнутых карточек отображается сумма долга и количество обращений. Над нижним меню — общая сумма по всем видимым клиентам. Кнопки ⇅ и + поднимаются над этой полосой.<br>
+        <span class="help-badge" style="background:rgba(136,146,170,0.12);color:var(--text2);border:1px solid var(--border);">✅ Сделано</span> — только клиенты с оплаченными обращениями.<br>
+        При выборе фильтра карточки раскрываются автоматически и показывают только подходящие записи. На кнопках отображается количество таких обращений.
       </p>
       <p class="help-p"><strong>Поиск</strong> работает по названию организации, адресу, именам, должностям и телефонам контактных лиц.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">Настройки</div>
+      <p class="help-p">Открываются кнопкой <strong>⚙️</strong> в нижнем меню. Настройки хранятся отдельно от базы данных и не затрагиваются при импорте/экспорте.</p>
+      <p class="help-p"><strong>Показывать множитель</strong> — управляет видимостью бейджа <span class="help-badge hb-blue">×1.5</span> в шапке карточки клиента. Удобно отключить, если множитель у всех клиентов одинаковый.</p>
+      <p class="help-p"><strong>Шапка счёта</strong> — текст, который появляется перед счётом при отправке: реквизиты, имя специалиста, телефон и т.п.</p>
+      <p class="help-p"><strong>Подвал счёта</strong> — текст после итоговой суммы: реквизиты для оплаты, подпись, пожелания.</p>
+      <p class="help-p"><strong>Скрытые клиенты</strong> — список всех клиентов с галочками. Снятые клиенты не отображаются в основном списке, их обращения не попадают в счётчики фильтров и не учитываются в общей сумме «Не оплачено». Галочку можно вернуть в любой момент — данные не удаляются.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">Счёт клиенту</div>
+      <p class="help-p">Кнопка <strong>«📄 Счёт»</strong> появляется в раскрытой карточке клиента только при активном фильтре <span class="help-badge hb-red">🔴 Неопл.</span> — когда есть что выставлять.</p>
+      <p class="help-p">Открывается модальное окно со списком всех неоплаченных обращений. Каждая работа показана с количеством и суммой — галочкой можно исключить любую позицию из счёта. Итог пересчитывается в реальном времени.</p>
+      <p class="help-p">Выезды сгруппированы по дате и причине. Шапка и подвал добавляются из настроек. Формат текста:</p>
+      <div class="help-tip" style="font-family:var(--mono);font-size:12px;white-space:pre-wrap;">Счёт · Название клиента
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+21-04-2025 · Замена блока питания
+  Блок питания ATX — 1 шт — 2 500 ₽
+  Работа по замене — 1 шт — 800 ₽
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+Итого: 3 300 ₽</div>
+      <p class="help-p" style="margin-top:10px;"><strong>📤 Поделиться</strong> — открывает системный диалог выбора приложения. Текст вставляется в новое сообщение или письмо — ничего не отправляется автоматически.<br>
+      <strong>📋 Скопировать</strong> — копирует текст в буфер обмена. Если буфер недоступен (небезопасный контекст) — показывается текстовое поле для ручного копирования.</p>
+      <p class="help-p">Шапку и подвал счёта (реквизиты, подпись, реквизиты оплаты) можно настроить в разделе <strong>⚙️ Настройки</strong>.</p>
     </div>
 
     <div class="help-section">
@@ -2568,9 +2847,9 @@ init();
     </div>
 
     <div class="help-section">
-      <div class="help-section-title">Выезд — создание и редактирование</div>
-      <p class="help-p">Кнопка <strong>«+ Добавить выезд»</strong> внутри карточки открывает полноэкранный редактор. Тап на существующий выезд открывает его для редактирования.</p>
-      <p class="help-p"><strong>Статусы выезда:</strong></p>
+      <div class="help-section-title">Обращение — создание и редактирование</div>
+      <p class="help-p">Кнопка <strong>«+ Добавить обращение»</strong> внутри карточки открывает полноэкранный редактор. Тап на существующее обращение открывает его для редактирования.</p>
+      <p class="help-p"><strong>Статусы обращения:</strong></p>
       <p class="help-p">
         <span class="help-badge hb-amber">В работе</span> — янтарный фон, работа ещё не завершена.<br>
         <span class="help-badge hb-red">Не оплачено</span> — красный фон, выполнено но не оплачено.<br>
@@ -2593,12 +2872,22 @@ init();
       <p class="help-p"><strong>В браузере:</strong> данные хранятся в localStorage. При очистке кэша браузера данные пропадут. Рекомендуется периодически делать экспорт (кнопка ⬇ в шапке).</p>
       <p class="help-p"><strong>В APK-версии:</strong> данные автоматически сохраняются во внутреннюю папку приложения (файл <strong>ito_data.json</strong>) при каждом изменении и при сворачивании. Папка не видна в файловом менеджере, но данные не зависят от очистки кэша браузера и сохраняются между запусками. Дополнительно данные дублируются в localStorage.</p>
       <p class="help-p">Кнопка <strong>⬇ Экспорт</strong> создаёт файл резервной копии с датой в имени и открывает диалог «Поделиться» — можно отправить в Telegram, на почту, сохранить в Google Drive или Downloads. Это единственный способ получить файл с данными на руки.</p>
-      <p class="help-p">Кнопка <strong>⬆ Импорт</strong> — загрузить ранее сохранённый файл. Текущие данные при импорте заменяются полностью.</p>
+      <p class="help-p">Кнопка <strong>⬆ Импорт</strong> — загрузить ранее сохранённый файл. Текущие данные при импорте заменяются полностью. Сразу после импорта появляется уведомление со ссылкой <strong>«Отменить»</strong> — в течение 8 секунд можно откатить замену и вернуть предыдущее состояние базы.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">Настройки</div>
+      <p class="help-p">Открываются кнопкой <strong>⚙️</strong> в нижнем меню. Закрываются стрелкой ‹ или системной кнопкой «Назад».</p>
+      <p class="help-p"><strong>Показывать множитель</strong> — включает или скрывает бейдж <span class="help-badge hb-blue">×1.5</span> в шапке карточки клиента. Удобно отключить, если множитель у всех клиентов одинаковый.</p>
+      <p class="help-p"><strong>Шапка счёта</strong> — текст, который добавляется перед названием клиента при формировании счёта. Подходит для реквизитов: имя ИП, ИНН, телефон.</p>
+      <p class="help-p"><strong>Подвал счёта</strong> — текст, который добавляется после итоговой суммы. Подходит для реквизитов оплаты, подписи, благодарности.</p>
+      <p class="help-p"><strong>Скрытые клиенты</strong> — список всех клиентов с галочками. Снятая галочка убирает клиента из основного списка, его обращения не учитываются в счётчиках фильтров и в полосе общей суммы. Данные клиента и его история сохраняются — можно вернуть галочку в любой момент.</p>
+      <div class="help-tip">Скрытие клиентов удобно для временно неактивных контрагентов или для разделения рабочих и архивных записей без удаления.</div>
     </div>
 
     <div class="help-section">
       <div class="help-section-title">О программе</div>
-      <p class="help-p"><strong>IT Аутсорс</strong> — инструмент учёта клиентов, выездов и расчёта стоимости работ для выездного IT-специалиста.</p>
+      <p class="help-p"><strong>IT Аутсорс</strong> — инструмент учёта клиентов, обращений и расчёта стоимости работ для выездного IT-специалиста.</p>
       <p class="help-p">Разработано в <strong>CheshirCa Nest</strong>.<br>
       Автор: <strong>Дядька Чешир</strong></p>
       <p class="help-p">Связь:<br>
@@ -2609,6 +2898,7 @@ init();
 
     <div class="help-section">
       <div class="help-section-title">История версий</div>
+      <p class="help-p"><strong>v1.21</strong> — «выезд» переименован в «обращение»; вкладка «⚙️ Настройки» в нижнем меню: шапка и подвал счёта, переключатель множителя в карточках, скрытие клиентов из списков и подсчётов.</p>
       <p class="help-p"><strong>v1.20</strong> — валидация базы при загрузке из хранилища; recovery-кнопка «Сбросить» при ошибке рендера; резервная копия и откат после импорта (8 сек); защита localStorage от QuotaExceededError; ошибки Share переведены на toast.</p>
       <p class="help-p"><strong>v1.19</strong> — аудит надёжности: toast-уведомление при сбое записи в файл на Android; углублённая валидация импорта (contacts[], works[], Number.isFinite, формат даты, проверка cid); защита render() от падения данных; fallback для буфера обмена в небезопасном контексте.</p>
       <p class="help-p"><strong>v1.18</strong> — кнопка ⇅ слева от «+» сворачивает и разворачивает все карточки клиентов разом; при фильтре «Не оплачено» поднимается над полосой итого вместе с «+».</p>
@@ -2634,7 +2924,7 @@ init();
 
   </div>
   <div style="text-align:center;padding:16px;font-size:11px;font-family:var(--mono);color:var(--text3);border-top:1px solid var(--border);margin-top:4px;">
-    © CheshirCa Nest · Дядька Чешир · v1.20
+    © CheshirCa Nest · Дядька Чешир · v1.21
   </div>
 </div>
 
