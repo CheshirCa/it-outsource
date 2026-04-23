@@ -1294,7 +1294,7 @@ select.form-input { appearance: auto; }
 <div class="topbar">
   <div>
     <div class="topbar-title" id="topbar-title">Клиенты</div>
-    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.21</div>
+    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.22</div>
   </div>
   <div class="topbar-right">
     <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Тема"></button>
@@ -1650,6 +1650,11 @@ function switchTab(t) {
   document.getElementById('clients-toolbar').style.display = t === 'clients' ? 'block' : 'none';
   document.getElementById('price-toolbar').style.display   = t === 'price'   ? 'block' : 'none';
   document.getElementById('fab-collapse').style.display    = t === 'clients' ? 'flex'  : 'none';
+  if (t !== 'clients') {
+    document.getElementById('grand-total-bar').classList.remove('visible');
+    document.getElementById('fab').classList.remove('raised');
+    document.getElementById('fab-collapse').classList.remove('raised');
+  }
   render();
 }
 
@@ -2898,6 +2903,7 @@ init();
 
     <div class="help-section">
       <div class="help-section-title">История версий</div>
+      <p class="help-p"><strong>v1.22</strong> — полоса «Всего не оплачено» скрывается при переключении на вкладку Прайс.</p>
       <p class="help-p"><strong>v1.21</strong> — «выезд» переименован в «обращение»; вкладка «⚙️ Настройки» в нижнем меню: шапка и подвал счёта, переключатель множителя в карточках, скрытие клиентов из списков и подсчётов.</p>
       <p class="help-p"><strong>v1.20</strong> — валидация базы при загрузке из хранилища; recovery-кнопка «Сбросить» при ошибке рендера; резервная копия и откат после импорта (8 сек); защита localStorage от QuotaExceededError; ошибки Share переведены на toast.</p>
       <p class="help-p"><strong>v1.19</strong> — аудит надёжности: toast-уведомление при сбое записи в файл на Android; углублённая валидация импорта (contacts[], works[], Number.isFinite, формат даты, проверка cid); защита render() от падения данных; fallback для буфера обмена в небезопасном контексте.</p>
@@ -2924,7 +2930,7 @@ init();
 
   </div>
   <div style="text-align:center;padding:16px;font-size:11px;font-family:var(--mono);color:var(--text3);border-top:1px solid var(--border);margin-top:4px;">
-    © CheshirCa Nest · Дядька Чешир · v1.21
+    © CheshirCa Nest · Дядька Чешир · v1.22
   </div>
 </div>
 
