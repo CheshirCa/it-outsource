@@ -615,6 +615,19 @@ select.form-input { appearance: auto; }
   font-weight: 700;
   cursor: pointer;
 }
+.fs-cancel-btn,
+.fs-delete-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-family: var(--sans);
+  font-weight: 700;
+  cursor: pointer;
+}
+.fs-delete-btn { color: var(--red); border-color: rgba(224,88,88,0.45); }
 .fs-body {
   flex: 1;
   overflow-y: auto;
@@ -1294,7 +1307,7 @@ select.form-input { appearance: auto; }
 <div class="topbar">
   <div>
     <div class="topbar-title" id="topbar-title">Клиенты</div>
-    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.22</div>
+    <div class="topbar-sub" id="topbar-sub">IT АУТСОРС · v1.23</div>
   </div>
   <div class="topbar-right">
     <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Тема"></button>
@@ -1410,8 +1423,10 @@ select.form-input { appearance: auto; }
 <!-- ── VISIT FULLSCREEN ── -->
 <div class="fullscreen" id="visit-screen">
   <div class="fs-header">
-    <button class="back-btn" onclick="closeVisit()">‹</button>
+    <button class="back-btn" onclick="cancelVisit()">‹</button>
     <div class="fs-title" id="fs-title">Обращение</div>
+    <button class="fs-cancel-btn" onclick="cancelVisit()">Отмена</button>
+    <button class="fs-delete-btn" id="fs-delete-btn" onclick="deleteVisit()" style="display:none;">Удалить</button>
     <button class="fs-save-btn" onclick="saveVisit()">Сохранить</button>
   </div>
   <div class="fs-body">
@@ -1500,6 +1515,7 @@ select.form-input { appearance: auto; }
 
 <!-- hidden file input for import -->
 <input type="file" id="import-input" accept=".json" style="display:none" onchange="doImport(this)">
+<input type="file" id="price-import-input" accept=".txt,.csv,.tsv,text/plain,text/csv" style="display:none" onchange="doPriceImport(this)">
 
 <script>
 // ══════════════════════════════════════════
@@ -2099,6 +2115,7 @@ function openVisitNew(cid) {
   document.getElementById('v-date').value = new Date().toISOString().slice(0,10);
   document.getElementById('v-reason').value = '';
   document.getElementById('v-note').value = '';
+  document.getElementById('fs-delete-btn').style.display = 'none';
   document.getElementById('fs-title').textContent = c?.name || 'Обращение';
   setStatus('inprogress');
   renderWorks();
@@ -2115,6 +2132,7 @@ function openVisitEdit(vid, cid) {
   document.getElementById('v-date').value = v.date;
   document.getElementById('v-reason').value = v.reason;
   document.getElementById('v-note').value = v.note||'';
+  document.getElementById('fs-delete-btn').style.display = 'block';
   document.getElementById('fs-title').textContent = c?.name || 'Обращение';
   setStatus(v.status);
   renderWorks();
@@ -2122,6 +2140,20 @@ function openVisitEdit(vid, cid) {
 }
 function closeVisit() {
   document.getElementById('visit-screen').classList.remove('open');
+}
+function cancelVisit() {
+  closeVisit();
+}
+function deleteVisit() {
+  const vid = document.getElementById('v-id').value;
+  const v = db.visits.find(x => x.id === vid);
+  if (!vid || !v) return;
+  showConfirm('Удалить обращение?', 'Обращение и его работы будут удалены без возможности восстановления.', async () => {
+    db.visits = db.visits.filter(x => x.id !== vid);
+    await save();
+    closeVisit();
+    render();
+  });
 }
 function togglePricePicker() {
   const dp = document.getElementById('price-picker');
@@ -2364,6 +2396,94 @@ async function exportData() {
   a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+async function exportPrice() {
+  const text = db.pricelist
+    .slice()
+    .sort((a,b) => safeStr(a.name).localeCompare(safeStr(b.name), 'ru'))
+    .map(p => `${String(p.name).replace(/[\t\r\n]+/g, ' ').trim()}\t${String(p.price).replace('.', ',')}`)
+    .join('\n');
+  const fileName = `ito_pricelist_${new Date().toISOString().slice(0,10)}.txt`;
+
+  if (IS_CAP) {
+    try {
+      const { Filesystem, Share } = window.Capacitor.Plugins;
+      await Filesystem.writeFile({
+        path: fileName,
+        data: text,
+        directory: 'CACHE',
+        encoding: 'utf8',
+        recursive: true
+      });
+      const uriResult = await Filesystem.getUri({ path: fileName, directory: 'CACHE' });
+      await Share.share({
+        title: 'IT Аутсорс — прайс-лист',
+        text: 'Текстовый прайс-лист IT Аутсорс',
+        url: uriResult.uri,
+        dialogTitle: 'Сохранить или отправить'
+      });
+    } catch(e) {
+      if (e && (e.message||'').toLowerCase().includes('cancel')) return;
+      console.warn('Price export error:', e);
+      alert('Ошибка выгрузки прайса: ' + (e.message || e));
+    }
+    return;
+  }
+
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importPrice() {
+  document.getElementById('price-import-input').value = '';
+  document.getElementById('price-import-input').click();
+}
+
+function parsePriceText(text) {
+  const result = [];
+  for (const rawLine of String(text || '').split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    let name = '', rawPrice = '';
+    let m = line.match(/^(.+?)\s*[\t;|]\s*([\d\s.,]+)\s*(?:₽|руб(?:\.|лей)?)?$/i);
+    if (!m) m = line.match(/^(.+?)\s+([\d\s.,]+)\s*(?:₽|руб(?:\.|лей)?)?$/i);
+    if (m) { name = m[1].trim(); rawPrice = m[2].trim(); }
+    if (!name || !rawPrice || /^(название|работа|наименование)$/i.test(name)) continue;
+    const price = Number(rawPrice.replace(/\s/g, '').replace(',', '.'));
+    if (!Number.isFinite(price) || price < 0) continue;
+    result.push({ name, price });
+  }
+  return result;
+}
+
+function doPriceImport(inp) {
+  const file = inp.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const rows = parsePriceText(e.target.result);
+    if (!rows.length) {
+      alert('Не удалось найти строки с форматом «Название работы — цена».');
+      return;
+    }
+    showConfirm('Загрузить прайс?', `Текущий прайс будет заменён. Найдено работ: ${rows.length}.`, async () => {
+      const byName = new Map(db.pricelist.map(p => [safeStr(p.name).trim().toLowerCase(), p]));
+      db.pricelist = rows.map(row => {
+        const old = byName.get(row.name.trim().toLowerCase());
+        return { id: old?.id || uid(), name: row.name, price: row.price };
+      });
+      await save();
+      render();
+      showToast(`Прайс загружен: ${rows.length} работ`);
+    });
+  };
+  reader.readAsText(file, 'UTF-8');
 }
 
 async function importData() {
@@ -2747,6 +2867,15 @@ init();
     </div>
 
     <div class="settings-section">
+      <div class="settings-section-title">Прайс-лист</div>
+      <p style="font-size:13px;color:var(--text3);font-family:var(--mono);margin-bottom:12px;">Текстовый файл: одна работа на строку, название и цена разделены табуляцией.</p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-primary" style="margin-top:0;flex:1;" onclick="exportPrice()">⬇ Выгрузить</button>
+        <button class="btn-primary" style="margin-top:0;flex:1;" onclick="importPrice()">⬆ Загрузить</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
       <div class="settings-section-title">Счёт — шапка и подвал</div>
       <div class="form-group">
         <label class="form-label">Шапка счёта</label>
@@ -2903,6 +3032,7 @@ init();
 
     <div class="help-section">
       <div class="help-section-title">История версий</div>
+      <p class="help-p"><strong>v1.23</strong> — текстовая выгрузка и импорт прайса в настройках; отмена создания и удаление обращений.</p>
       <p class="help-p"><strong>v1.22</strong> — полоса «Всего не оплачено» скрывается при переключении на вкладку Прайс.</p>
       <p class="help-p"><strong>v1.21</strong> — «выезд» переименован в «обращение»; вкладка «⚙️ Настройки» в нижнем меню: шапка и подвал счёта, переключатель множителя в карточках, скрытие клиентов из списков и подсчётов.</p>
       <p class="help-p"><strong>v1.20</strong> — валидация базы при загрузке из хранилища; recovery-кнопка «Сбросить» при ошибке рендера; резервная копия и откат после импорта (8 сек); защита localStorage от QuotaExceededError; ошибки Share переведены на toast.</p>
@@ -2930,7 +3060,7 @@ init();
 
   </div>
   <div style="text-align:center;padding:16px;font-size:11px;font-family:var(--mono);color:var(--text3);border-top:1px solid var(--border);margin-top:4px;">
-    © CheshirCa Nest · Дядька Чешир · v1.22
+    © CheshirCa Nest · Дядька Чешир · v1.23
   </div>
 </div>
 
